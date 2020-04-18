@@ -1,0 +1,14 @@
+.vscode
+build
+docs
+*.swp
+*.swo
+demo/albedo
+demo/build
+demo/demo.so
+demo/demo
+demo/game
+demo/game.o
+demo/build
+design/*.png
+junk
