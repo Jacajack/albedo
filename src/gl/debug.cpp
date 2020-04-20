@@ -4,13 +4,13 @@
 
 using abd::gl::debug_group_object;
 
-void APIENTRY gl_debug_callback(GLenum source,
+void APIENTRY abd::gl::gl_debug_callback(GLenum source,
                                 GLenum type,
                                 GLuint id,
                                 GLenum severity,
                                 GLsizei length,
                                 const GLchar *message_cstr,
-                                void *user_param)
+                                const void *user_param)
 {
 	static const std::unordered_map<GLenum, std::string> source_names
 	{
@@ -51,8 +51,8 @@ void APIENTRY gl_debug_callback(GLenum source,
 
 
 
-debug_group_object::debug_group_object(GLuint id, const std::string &message)
-	: debug_group_object(id, message.c_str())
+debug_group_object::debug_group_object(GLuint id, const std::string &message) :
+	debug_group_object(id, message.c_str())
 {
 }
 

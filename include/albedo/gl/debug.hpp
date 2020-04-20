@@ -16,7 +16,7 @@ void APIENTRY gl_debug_callback(GLenum source,
 								GLenum severity,
 								GLsizei length,
 								const GLchar *message,
-								void *user_param);
+								const void *user_param);
 
 /**
 	A RAII wrapper for OpenGL debug group.
