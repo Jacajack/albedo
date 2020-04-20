@@ -65,4 +65,6 @@ add_library(
 	"${PROJECT_SOURCE_DIR}/albedo.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/debug.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/window.cpp"
+	"${PROJECT_SOURCE_DIR}/gl/shader.cpp"
+	"${PROJECT_SOURCE_DIR}/gl/program.cpp"
 )
