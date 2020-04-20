@@ -63,5 +63,6 @@ link_libraries(
 add_library(
 	albedo
 	"${PROJECT_SOURCE_DIR}/albedo.cpp"
+	"${PROJECT_SOURCE_DIR}/gl/debug.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/window.cpp"
 )
