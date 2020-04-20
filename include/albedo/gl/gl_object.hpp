@@ -2,7 +2,9 @@
 
 #include <type_traits>
 #include <string>
+
 #include <albedo/gl/gl.hpp>
+#include <albedo/utils.hpp>
 
 namespace abd
 {
@@ -43,25 +45,21 @@ struct gl_object_traits
     \template T is object type - see gl_object_type
 */
 template <gl_object_type T>
-class gl_object
+class gl_object : abd::noncopy
 {
 public:
 	inline gl_object();
 	inline explicit gl_object(GLenum target);
 
-	inline ~gl_object();
-
-	// Deleted copy constructor and copy assignment operator
-	gl_object(const gl_object &src) = delete;
-	gl_object &operator=(const gl_object &rhs) = delete;
+	virtual ~gl_object();
 
 	// Move semantics with source invalidation
-	gl_object(gl_object &&src);
-	gl_object &operator=(gl_object &&rhs);
+	gl_object(gl_object &&src) noexcept;
+	gl_object &operator=(gl_object &&rhs) noexcept;
 
 	//! Allows retrieveing object's parameters
 	template <typename Tv>
-	inline Tv get_parameter(GLenum parameter);
+	inline Tv get_parameter(GLenum parameter) const;
 
 	//! Allows retrieveing object's parameters
 	template <typename Tv>
@@ -96,7 +94,7 @@ std::uint64_t gl_object<T>::m_creation_counter = 0;
 
 //! Move constructor with source invalidation
 template <gl_object_type T>
-gl_object<T>::gl_object(gl_object<T> &&src) :
+gl_object<T>::gl_object(gl_object<T> &&src) noexcept :
 	m_id(src.m_id)
 {
 	src.m_id = 0;
@@ -104,7 +102,7 @@ gl_object<T>::gl_object(gl_object<T> &&src) :
 
 //! Move assignment operator with source invalidation
 template <gl_object_type T>
-gl_object<T> &gl_object<T>::operator=(gl_object<T> &&rhs)
+gl_object<T> &gl_object<T>::operator=(gl_object<T> &&rhs) noexcept
 {
 	// Prevent self-move
 	if (this != &rhs)
@@ -169,7 +167,7 @@ inline gl_object<gl_object_type::BUFFER>::~gl_object()
 
 template <>
 template <>
-inline GLint gl_object<gl_object_type::BUFFER>::get_parameter<GLint>(GLenum parameter)
+inline GLint gl_object<gl_object_type::BUFFER>::get_parameter<GLint>(GLenum parameter) const
 {
 	GLint val;
 	glGetNamedBufferParameteriv(m_id, parameter, &val);
@@ -178,7 +176,7 @@ inline GLint gl_object<gl_object_type::BUFFER>::get_parameter<GLint>(GLenum para
 
 template <>
 template <>
-inline GLint64 gl_object<gl_object_type::BUFFER>::get_parameter<GLint64>(GLenum parameter)
+inline GLint64 gl_object<gl_object_type::BUFFER>::get_parameter<GLint64>(GLenum parameter) const
 {
 	GLint64 val;
 	glGetNamedBufferParameteri64v(m_id, parameter, &val);
@@ -204,7 +202,7 @@ inline gl_object<gl_object_type::TEXTURE>::~gl_object()
 
 template <>
 template <>
-inline GLint gl_object<gl_object_type::TEXTURE>::get_parameter<GLint>(GLenum parameter)
+inline GLint gl_object<gl_object_type::TEXTURE>::get_parameter<GLint>(GLenum parameter) const
 {
 	GLint val;
 	glGetTextureParameteriv(m_id, parameter, &val);
@@ -213,7 +211,7 @@ inline GLint gl_object<gl_object_type::TEXTURE>::get_parameter<GLint>(GLenum par
 
 template <>
 template <>
-inline GLfloat gl_object<gl_object_type::TEXTURE>::get_parameter<GLfloat>(GLenum parameter)
+inline GLfloat gl_object<gl_object_type::TEXTURE>::get_parameter<GLfloat>(GLenum parameter) const
 {
 	GLfloat val;
 	glGetTextureParameterfv(m_id, parameter, &val);
@@ -301,7 +299,7 @@ inline gl_object<gl_object_type::FRAMEBUFFER>::~gl_object()
 
 template <>
 template <>
-inline GLint gl_object<gl_object_type::FRAMEBUFFER>::get_parameter<GLint>(GLenum parameter)
+inline GLint gl_object<gl_object_type::FRAMEBUFFER>::get_parameter<GLint>(GLenum parameter) const
 {
 	GLint val;
 	glGetNamedFramebufferParameteriv(m_id, parameter, &val);
@@ -368,7 +366,7 @@ inline gl_object<gl_object_type::SHADER>::~gl_object()
 
 template <>
 template <>
-inline GLint gl_object<gl_object_type::SHADER>::get_parameter<GLint>(GLenum parameter)
+inline GLint gl_object<gl_object_type::SHADER>::get_parameter<GLint>(GLenum parameter) const
 {
 	GLint val;
 	glGetShaderiv(m_id, parameter, &val);
@@ -394,7 +392,7 @@ inline gl_object<gl_object_type::PROGRAM>::~gl_object()
 
 template <>
 template <>
-inline GLint gl_object<gl_object_type::PROGRAM>::get_parameter<GLint>(GLenum parameter)
+inline GLint gl_object<gl_object_type::PROGRAM>::get_parameter<GLint>(GLenum parameter) const
 {
 	GLint val;
 	glGetProgramiv(m_id, parameter, &val);
