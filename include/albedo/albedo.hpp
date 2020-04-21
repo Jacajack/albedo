@@ -5,6 +5,5 @@
 
 namespace abd {
 
-void init_context();
 
 }
