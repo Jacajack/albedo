@@ -20,6 +20,10 @@ public:
 
 	std::string get_link_log() const;
 
+	void use() const
+	{
+		glUseProgram(*this);
+	}
 };
 
 /**
