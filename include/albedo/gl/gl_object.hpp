@@ -48,6 +48,8 @@ template <gl_object_type T>
 class gl_object : abd::noncopy
 {
 public:
+	using hash_type = std::uint64_t;
+
 	inline gl_object();
 	inline explicit gl_object(GLenum target);
 
@@ -78,7 +80,7 @@ public:
 	inline GLuint id() const noexcept;
 
 	//! Returns unique object hash
-	std::uint64_t hash() const noexcept;
+	hash_type hash() const noexcept;
 
 protected:
 	//! The object ID
@@ -144,9 +146,9 @@ inline GLuint gl_object<T>::id() const noexcept
 
 // Computes a hash from creation counter and object type ID
 template <gl_object_type T>
-std::uint64_t gl_object<T>::hash() const noexcept
+typename gl_object<T>::hash_type gl_object<T>::hash() const noexcept
 {
-	return (static_cast<std::uint64_t>(T) << 60) | m_creation_counter;
+	return (static_cast<gl_object<T>::hash_type>(T) << 60) | m_creation_counter;
 }
 
 
