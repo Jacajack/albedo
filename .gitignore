@@ -11,3 +11,4 @@ demo/game.o
 demo/build
 design/*.png
 junk
+vscode/settings.json
