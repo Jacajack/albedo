@@ -50,6 +50,9 @@ class texture : public gl_object<gl_object_type::TEXTURE>
 public:
 	texture(texture_target target);
 
+	void bind(int unit);
+	void generate_mipmap();
+
 	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt);
 
 	void storage_1d(GLsizei levels, GLenum internalformat, GLsizei width);
@@ -89,6 +92,7 @@ public:
 	void subimage_3d(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels) = delete;
 
 private:
+	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt);
 	void storage_1d(GLsizei levels, GLenum internalformat, GLsizei width);
 };
 
@@ -102,6 +106,7 @@ public:
 	texture_2d(texture_target_2d target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height);
 
 	// Deleted members
+	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt) = delete;
 	void storage_1d(GLsizei levels, GLenum internalformat, GLsizei width) = delete;
 	void storage_2d_multisample(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations) = delete;
 	void storage_3d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth) = delete;
@@ -122,6 +127,7 @@ public:
 	texture_3d(texture_target_3d target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth);
 
 	// Deleted members
+	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt) = delete;
 	void storage_1d(GLsizei levels, GLenum internalformat, GLsizei width) = delete;
 	void storage_2d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height) = delete;
 	void storage_2d_multisample(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations) = delete;

@@ -11,6 +11,22 @@ texture::texture(texture_target target) :
 {
 }
 
+void texture::bind(int unit)
+{
+	glBindTextureUnit(unit, *this);
+}
+
+void texture::generate_mipmap()
+{
+	glGenerateTextureMipmap(*this);
+}
+
+
+void texture::attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt)
+{
+	glTextureBuffer(*this, internalforamt, buffer);
+}
+
 void texture::storage_1d(GLsizei levels, GLenum internalformat, GLsizei width)
 {
 	glTextureStorage1D(*this, levels, internalformat, width);
