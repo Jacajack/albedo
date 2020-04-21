@@ -35,6 +35,10 @@ void vertex_array::set_attribute_enable(GLuint attribindex, bool enable)
 		glDisableVertexArrayAttrib(*this, attribindex);
 }
 
+void vertex_array::bind() const
+{
+	glBindVertexArray(*this);
+}
 
 /**
 	Creates a new VAO attribute. Initially, a buffer binding with the same index is used

@@ -22,6 +22,7 @@ public:
 	void set_attribute_format(GLuint attribindex, GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset);
 	void set_attribute_binding(GLuint attribindex, GLuint bindingindex);
 	void set_attribute_enable(GLuint attribindex, bool enable);
+	void bind() const;
 };
 
 
@@ -80,6 +81,11 @@ public:
 	vao_attribute get_attribute(GLuint index);
 	void bind_buffer(GLuint bindingindex, const gl::buffer &buffer, GLintptr offset, GLsizei stride);
 	
+	void bind() const
+	{
+		m_control_block_ptr->vao.bind();
+	}
+
 	GLuint id() const
 	{
 		return m_control_block_ptr->vao.id();
