@@ -34,7 +34,6 @@ int main(int argc, char *argv[])
 	glBindVertexArray(vao);
 
 	// A square in a buffer
-	abd::gl::gl_object<abd::gl::gl_object_type::BUFFER> buffer;
 	float quad[] =
 	{
 		-1, -1, 0,
@@ -45,9 +44,9 @@ int main(int argc, char *argv[])
 		1, 1, 0,
 		-1, 1, 0
 	};
-	glNamedBufferStorage(buffer, sizeof(quad), &quad, GL_DYNAMIC_STORAGE_BIT);
+	abd::gl::buffer buffer(sizeof(quad), quad, GL_DYNAMIC_STORAGE_BIT);
 
-	abd::gl::vao_attribute pos_attrib(vao.get_attribute(0));
+	auto pos_attrib{vao.get_attribute(0)};
 	pos_attrib.set_format(3, GL_FLOAT, GL_FALSE, 0);
 	pos_attrib.set_binding(0);
 
