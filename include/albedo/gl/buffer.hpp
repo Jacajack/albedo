@@ -1,14 +1,55 @@
 #pragma once
 
 #include <albedo/gl/gl_object.hpp>
+#include <memory>
 
 namespace abd {
 namespace gl {
 
-/*
-	This is temporary
+/**
+	Represents a buffer mapped to memory region
 */
-using buffer = gl_object<gl_object_type::BUFFER>;
+class buffer_mapping : abd::noncopy
+{
+	friend class buffer;
+
+public:
+	~buffer_mapping();
+
+	void *data()
+	{
+		return m_data;
+	}
+
+private:
+	buffer_mapping(GLuint buffer, GLintptr offset, GLsizeiptr length, GLbitfield access);
+	void unmap();
+
+	GLuint m_id;
+	void *m_data;
+};
+
+/**
+	Represents an OpenGL buffer
+	\todo data copying
+*/
+class buffer : public gl_object<gl_object_type::BUFFER>
+{
+public:
+	buffer(GLsizeiptr size, const void *data, GLbitfield flags);
+	virtual ~buffer();
+
+	void bind(GLenum target) const;
+
+	void write(GLintptr offset, GLsizeiptr size, const void *data);
+	void read(GLintptr offset, GLsizeiptr size, void *data) const;
+
+	std::shared_ptr<buffer_mapping> map(GLintptr offset, GLsizeiptr length, GLbitfield access);
+
+private:
+	std::weak_ptr<buffer_mapping> m_mapping_ptr;
+};
+
 
 }
 }
