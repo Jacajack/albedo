@@ -2,6 +2,7 @@
 
 #include <albedo/gl/gl_object.hpp>
 #include <memory>
+#include <vector>
 
 namespace abd {
 namespace gl {
@@ -49,6 +50,12 @@ public:
 private:
 	std::weak_ptr<buffer_mapping> m_mapping_ptr;
 };
+
+template <typename T>
+static std::unique_ptr<abd::gl::buffer> vector_to_buffer(const std::vector<T> &v, GLbitfield flags)
+{
+	return std::make_unique<abd::gl::buffer>(v.size() * sizeof(T), v.data(), flags);
+}
 
 
 }

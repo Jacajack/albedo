@@ -4,18 +4,26 @@
 #include <albedo/exception.hpp>
 #include <albedo/gl/buffer.hpp>
 #include <albedo/material.hpp>
+#include <assimp/scene.h>
 #include <vector>
 
 namespace abd {
 
+
 /**
-	Contains mesh data - stored in RAM memory
+	Represents any (simple or compound) mesh data.
+	When loaded into GPU, the meshes are loaded into one
+	set of buffers.
+
+	\todo add materials vector
 */
 struct mesh_data
 {
-	abd::material material;
+	std::vector<GLint> base_indices;
+	std::vector<GLint> draw_sizes;
+
 	std::vector<GLint> indices;
-	std::vector<glm::vec3> vertices;
+	std::vector<glm::vec3> positions;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> uvs;
 };
@@ -29,11 +37,26 @@ class mesh_buffers
 public:
 	mesh_buffers(const mesh_data &data);
 
-private:
+//private:
 	std::unique_ptr<abd::gl::buffer> m_index_buffer;
-	std::unique_ptr<abd::gl::buffer> m_vertex_buffer;
+	std::unique_ptr<abd::gl::buffer> m_position_buffer;
 	std::unique_ptr<abd::gl::buffer> m_normal_buffer;
 	std::unique_ptr<abd::gl::buffer> m_uv_buffer;
 };
+
+
+/**
+	Represents a compund mesh. Contains owning pointer to mesh_buffers class.
+*/
+class mesh
+{
+
+private:
+	mesh_data m_data;
+	std::unique_ptr<mesh_buffers> m_buffers;
+};
+
+
+
 
 }
