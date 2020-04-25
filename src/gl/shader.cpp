@@ -1,20 +1,6 @@
 #include <albedo/gl/shader.hpp>
 
-using abd::gl::shader_exception;
 using abd::gl::shader;
-
-shader_exception::shader_exception(const std::string &compile_log) :
-	abd::exception("shader compilation error"),
-	m_compile_log(compile_log)
-{
-}
-
-shader_exception::shader_exception(std::string &&compile_log) :
-	abd::exception("shader compilation error"),
-	m_compile_log(std::move(compile_log))
-{
-}
-
 
 shader::shader(GLenum shader_type, const std::string &src) :
 	shader(shader_type, src.c_str())

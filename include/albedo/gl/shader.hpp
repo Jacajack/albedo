@@ -9,14 +9,21 @@
 namespace abd {
 namespace gl{
 
+//! A tag passed to shader_exception constructor
+struct program_link_error {};
+
 /**
 	An exception caused by shader compilation error
 */
 class shader_exception : public abd::exception
 {
 public:
-	explicit shader_exception(const std::string &compile_log);
-	explicit shader_exception(std::string &&compile_log);
+	template <typename T>
+	explicit shader_exception(T &&compile_log);
+
+	template <typename T>
+	explicit shader_exception(T &&link_log, program_link_error);
+
 	const std::string &get_compile_log() const
 	{
 		return m_compile_log;
@@ -25,6 +32,20 @@ public:
 private:
 	std::string m_compile_log;
 };
+
+template <typename T>
+shader_exception::shader_exception(T &&compile_log) :
+	abd::exception("shader compilation error"),
+	m_compile_log(std::forward<std::string>(compile_log))
+{
+}
+
+template <typename T>
+shader_exception::shader_exception(T &&link_log, program_link_error) :
+	abd::exception("shader program link error"),
+	m_compile_log(std::forward<std::string>(link_log))
+{
+}
 
 /**
 	A wrapper for OpenGL shader object.

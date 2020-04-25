@@ -47,7 +47,7 @@ program::program(const Tcont &shaders)
 	// Check result
 	if (this->get_parameter<GLint>(GL_LINK_STATUS) == GL_FALSE)
 	{
-		throw abd::gl::shader_exception(get_link_log());
+		throw abd::gl::shader_exception(get_link_log(), abd::gl::program_link_error{});
 	}
 }
 
