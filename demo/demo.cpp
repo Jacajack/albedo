@@ -60,21 +60,7 @@ int main(int argc, char *argv[])
 	std::unique_ptr<abd::gl::program> prog_ptr;
 	try
 	{
-		std::vector<abd::gl::shader> shaders;
-		shaders.emplace_back(GL_VERTEX_SHADER,
-			"#version 450 core\n"
-			"layout (location = 0) in vec3 v_pos;\n"
-			"uniform mat4 m_mvp;"
-			"void main(){\n"
-			"	gl_Position = m_mvp * vec4(v_pos, 1.0);\n"
-			"}\n");
-		shaders.emplace_back(GL_FRAGMENT_SHADER,
-			"#version 450 core\n"
-			"out vec3 f_color;"
-			"void main(){\n"
-			"	f_color = vec3(1.0);\n"
-			"}\n");
-		prog_ptr = std::make_unique<abd::gl::program>(shaders);
+		prog_ptr = std::make_unique<abd::gl::program>(abd::simple_load_shader_dir("test_shader"));
 	}
 	catch (const abd::gl::shader_exception &ex)
 	{
