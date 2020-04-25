@@ -3,8 +3,11 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
-
-
+#include <fstream>
+#include <string>
+#include <algorithm>
+#include <iostream>
+#include <boost/range/iterator_range.hpp>
 
 abd::mesh_data abd::assimp_simple_load_mesh(const boost::filesystem::path &path)
 {
@@ -87,4 +90,64 @@ abd::mesh_data abd::assimp_simple_load_mesh(const boost::filesystem::path &path)
 
 	process_node(scene, scene->mRootNode);
 	return mesh_data;
+}
+
+abd::gl::shader abd::simple_load_shader(GLenum type, const boost::filesystem::path &path)
+{
+	std::ifstream f{path.string()};
+	if (!f) throw abd::exception("could not open shader source file");
+
+	std::string src;
+	std::copy(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>(), std::back_insert_iterator(src));
+
+	return abd::gl::shader(type, src);
+}
+
+abd::gl::program abd::simple_load_shader_dir(const boost::filesystem::path &dir)
+{
+	using namespace boost::filesystem;
+
+	if (!is_directory(dir))
+		throw abd::exception("shader program must be provided in a directory on its own");
+
+	// Loaded shaders
+	std::vector<abd::gl::shader> shaders;
+
+	// Shader extensions mapped to shader types
+	static const std::unordered_map<std::string, GLenum> shader_types = {
+		{".vs", GL_VERTEX_SHADER},
+		{".fs", GL_FRAGMENT_SHADER},
+		{".tcs", GL_TESS_CONTROL_SHADER},
+		{".tes", GL_TESS_EVALUATION_SHADER},
+		{".cs", GL_COMPUTE_SHADER},
+		{".gs", GL_GEOMETRY_SHADER},
+	};
+
+	// Iterate over directory contents
+	for (auto &entry : boost::make_iterator_range(directory_iterator(dir), {}))
+	{
+		auto path = entry.path();
+
+		// If the path end with .glsl, it's likely a hit
+		if (is_regular_file(path) && path.extension() == ".glsl")
+		{
+			auto shader_type_str = path.stem().extension().string();
+
+			try
+			{
+				GLenum type = shader_types.at(shader_type_str);
+				shaders.emplace_back(simple_load_shader(type, path));
+			}
+			catch (const std::out_of_range &ex)
+			{
+				// Ignore
+			}
+		}
+	}
+
+	// Did not find any shaders
+	if (shaders.empty())
+		throw abd::exception("could not find any shaders in the provided directory");
+
+	return abd::gl::program(shaders);
 }
