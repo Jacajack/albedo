@@ -46,6 +46,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CXX_FLAGS_RELEASE_STR}
 
 link_directories("${PROJECT_SOURCE_DIR}/../build")
 
+set_source_files_properties(
+	"${PROJECT_SOURCE_DIR}/demo.cpp" PROPERTIES OBJECT_DEPENDS "${PROJECT_SOURCE_DIR}/../build/libalbedo.a"
+)
+
 # Libs
 link_libraries(
 	# Graphics
