@@ -72,4 +72,5 @@ add_library(
 	"${PROJECT_SOURCE_DIR}/gl/texture.cpp"
 	"${PROJECT_SOURCE_DIR}/mesh.cpp"
 	"${PROJECT_SOURCE_DIR}/simple_loaders.cpp"
+	"${PROJECT_SOURCE_DIR}/fixed_vao.cpp"
 )

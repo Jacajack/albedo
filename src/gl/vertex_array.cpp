@@ -117,6 +117,16 @@ vao_attribute::~vao_attribute()
 	}
 }
 
+/**
+	Performs all-in-one VAO attribute configuration.
+	Does not affect enable status.
+*/
+void vao_attribute::configure(const vao_attribute_config &config)
+{
+	set_binding(config.bindingindex);
+	set_format(config.size, config.type, config.normalized, config.relativeoffset);
+}
+
 void vao_attribute::set_format(GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset)
 {
 	// Try to acquire a shared pointer
@@ -162,4 +172,9 @@ vao_attribute vao::get_attribute(GLuint index)
 void vao::bind_buffer(GLuint bindingindex, const gl::buffer &buffer, GLintptr offset, GLsizei stride)
 {
 	m_control_block_ptr->vao.bind_buffer(bindingindex, buffer, offset, stride);
+}
+
+void vao::bind_buffer(GLuint bindingindex, const gl::buffer &buffer, const buffer_data_layout &data_layout)
+{
+	this->bind_buffer(bindingindex, buffer, data_layout.offset, data_layout.stride);
 }

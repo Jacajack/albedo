@@ -36,6 +36,27 @@ struct vao_control_block
 };
 
 /**
+	Represents all parameters needed to fully set up a VAO attribute
+*/
+struct vao_attribute_config
+{
+	GLuint bindingindex;
+	GLint size;
+	GLenum type;
+	GLboolean normalized;
+	GLuint relativeoffset;
+};
+
+/**
+	Determines data layout inside a buffer
+*/
+struct buffer_data_layout
+{
+	GLintptr offset;
+	GLsizei stride;
+};
+
+/**
 	Represents a VAO attribute. Follows RAII principles
 */
 class vao_attribute : abd::noncopy
@@ -47,6 +68,7 @@ public:
 	vao_attribute &operator=(vao_attribute &&rhs);
 	~vao_attribute();
 
+	void configure(const vao_attribute_config &config);
 	void set_format(GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset);
 	void set_binding(GLuint bindingindex);
 	bool set_enable(bool enable);
@@ -80,7 +102,8 @@ public:
 
 	vao_attribute get_attribute(GLuint index);
 	void bind_buffer(GLuint bindingindex, const gl::buffer &buffer, GLintptr offset, GLsizei stride);
-	
+	void bind_buffer(GLuint bindingindex, const gl::buffer &buffer, const buffer_data_layout &data_layout);
+
 	void bind() const
 	{
 		m_control_block_ptr->vao.bind();
