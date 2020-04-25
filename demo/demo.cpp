@@ -5,7 +5,11 @@
 #include <albedo/gl/program.hpp>
 #include <albedo/gl/debug.hpp>
 #include <albedo/gl/vertex_array.hpp>
+#include <albedo/mesh.hpp>
+#include <albedo/simple_loaders.hpp>
 #include <memory>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 
 void foo()
 {
@@ -18,20 +22,13 @@ int main(int argc, char *argv[])
 	assert(glfwInit() == GLFW_TRUE);
 
 	// GLFW window init
-	abd::gl::window win(640, 480, "test", nullptr, nullptr, {
-		{GLFW_SAMPLES, 0},
-		{GLFW_CONTEXT_VERSION_MAJOR, 4},
-		{GLFW_CONTEXT_VERSION_MINOR, 5},
-		{GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE},
-		{GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE},
-		{GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE},
-	});
+	abd::gl::window win(640, 480, "test", {});
 
 	glDebugMessageCallback(abd::gl::gl_debug_callback, nullptr);
 
 	// VAO
-	abd::gl::vao vao;
-	glBindVertexArray(vao);
+	abd::fixed_vao vao{abd::standard_vao_layout};
+	vao.bind();
 
 	// A square in a buffer
 	float quad[] =
@@ -46,11 +43,17 @@ int main(int argc, char *argv[])
 	};
 	abd::gl::buffer buffer(sizeof(quad), quad, GL_DYNAMIC_STORAGE_BIT);
 
-	auto pos_attrib{vao.get_attribute(0)};
-	pos_attrib.set_format(3, GL_FLOAT, GL_FALSE, 0);
-	pos_attrib.set_binding(0);
+	//auto pos_attrib{vao.get_attribute(0)};
+	//pos_attrib.set_format(3, GL_FLOAT, GL_FALSE, 0);
+	//pos_attrib.set_binding(0);
 
-	vao.bind_buffer(0, buffer, 0, 3 * sizeof(float));
+	//vao.bind_buffer(0, buffer, 0, 3 * sizeof(float));
+
+	abd::mesh_data md = abd::assimp_simple_load_mesh("monkey.obj");
+	std::cout << md.indices.size() << " indices" << std::endl;
+	abd::mesh_buffers mb(md);
+	mb.bind_to_vao(vao);
+	//vao.bind_buffer(0, *mb.m_position_buffer, 0, 3 * sizeof(float));
 
 
 	// Shaders
@@ -61,8 +64,9 @@ int main(int argc, char *argv[])
 		shaders.emplace_back(GL_VERTEX_SHADER,
 			"#version 450 core\n"
 			"layout (location = 0) in vec3 v_pos;\n"
+			"uniform mat4 m_mvp;"
 			"void main(){\n"
-			"	gl_Position = vec4(v_pos, 1.0);\n"
+			"	gl_Position = m_mvp * vec4(v_pos, 1.0);\n"
 			"}\n");
 		shaders.emplace_back(GL_FRAGMENT_SHADER,
 			"#version 450 core\n"
@@ -80,14 +84,38 @@ int main(int argc, char *argv[])
 		std::cerr << ex.get_compile_log() << std::endl;
 	}
 
-	glUseProgram(*prog_ptr);
+	prog_ptr->use();
+
+	GLuint ul_mvp = glGetUniformLocation(*prog_ptr, "m_mvp");
+	std::cout << "m_mvp at " << ul_mvp << std::endl;
 
 
-	win.run_main_loop([]()
+	glm::mat4 mat_view = glm::lookAt(
+		glm::vec3(0, 0, -5),
+		glm::vec3(0, 0, 0),
+		glm::vec3(0, 1, 0)
+	);
+
+	glm::mat4 mat_proj = glm::perspective(
+		glm::radians(60.f),
+		640.f / 480.f,
+		0.1f,
+		200.f
+	);
+
+	glm::mat4 mat_mvp = mat_proj * mat_view;
+
+	glUniformMatrix4fv(ul_mvp, 1, GL_FALSE, &mat_mvp[0][0]);
+
+	mb.bind_index_buffer();
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mb.m_index_buffer);
+
+	win.run_main_loop([&]()
 	{
 		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		//glDrawArrays(GL_TRIANGLES, 0, 6);
+		glDrawElements(GL_TRIANGLES, md.indices.size(), GL_UNSIGNED_INT, 0);
 	});
 
 
