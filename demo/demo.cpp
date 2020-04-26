@@ -10,6 +10,7 @@
 #include <memory>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
+#include <albedo/camera.hpp>
 
 void foo()
 {
@@ -51,6 +52,7 @@ int main(int argc, char *argv[])
 
 	abd::mesh_data md = abd::assimp_simple_load_mesh("monkey.obj");
 	std::cout << md.indices.size() << " indices" << std::endl;
+	std::cout << md.normals.size() << " normals" << std::endl;
 	abd::mesh_buffers mb(md);
 	mb.bind_to_vao(vao);
 	//vao.bind_buffer(0, *mb.m_position_buffer, 0, 3 * sizeof(float));
@@ -72,35 +74,58 @@ int main(int argc, char *argv[])
 
 	prog_ptr->use();
 
-	GLuint ul_mvp = glGetUniformLocation(*prog_ptr, "m_mvp");
-	std::cout << "m_mvp at " << ul_mvp << std::endl;
+	for (auto &[k,v] : prog_ptr->get_uniforms())
+	{
+		std::cout << "  unif - " << k << std::endl;
+	}
 
+	for (auto &[k,v] : prog_ptr->get_uniform_blocks())
+	{
+		std::cout << "  block - " << k << std::endl;
+	}
 
-	glm::mat4 mat_view = glm::lookAt(
-		glm::vec3(0, 0, -5),
-		glm::vec3(0, 0, 0),
-		glm::vec3(0, 1, 0)
-	);
+	GLint ul_mvp = prog_ptr->get_uniform("m_mvp").get_location();
+	std::cout << "m_mvp at " << ul_mvp << " " << glGetUniformLocation(prog_ptr->id(), "m_mvp") << std::endl;
 
-	glm::mat4 mat_proj = glm::perspective(
+	GLint ul_test = prog_ptr->get_uniform("TEST_BLOCK.color").get_location();
+	std::cout << "test at " << ul_test << " " << glGetUniformLocation(prog_ptr->id(), "TEST_BLOCK.color") << std::endl;
+
+	std::vector<glm::vec3> v_test{{1, 0.4, 1}};
+	auto buf_test = abd::gl::vector_to_buffer(v_test, GL_DYNAMIC_STORAGE_BIT);
+	GLuint bi = glGetUniformBlockIndex(*prog_ptr, "TEST_BLOCK");
+	glUniformBlockBinding(*prog_ptr, bi, 0);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, *buf_test);
+
+	//glUniform3f(ul_test, 1, 0, 1);
+
+	abd::perspective persp(
 		glm::radians(60.f),
 		640.f / 480.f,
 		0.1f,
 		200.f
 	);
 
-	glm::mat4 mat_mvp = mat_proj * mat_view;
+	abd::camera cam({0, 0, -5}, {0, 0, 0}, {0, 1, 0}, persp);
 
-	glUniformMatrix4fv(ul_mvp, 1, GL_FALSE, &mat_mvp[0][0]);
+	
 
 	mb.bind_index_buffer();
 //	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *mb.m_index_buffer);
 
-	win.run_main_loop([&]()
+	win.run_main_loop([&](double dt)
 	{
+		static double t = 0;
+		t += dt;
+		glUniformMatrix4fv(ul_mvp, 1, GL_FALSE, &cam.get_matrix()[0][0]);
+
+		float cam_r = 5;
+		cam.set_position({sin(t) * cam_r, 0, cos(t) * cam_r});
+		cam.look_at({0, 0, 0});
+
 		glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//glDrawArrays(GL_TRIANGLES, 0, 6);
+		glEnable(GL_DEPTH_TEST);
 		glDrawElements(GL_TRIANGLES, md.indices.size(), GL_UNSIGNED_INT, 0);
 	});
 
