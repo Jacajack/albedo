@@ -101,6 +101,23 @@ glm::mat4 camera::get_projection_matrix() const
 	return m_mat_proj;
 }
 
+void camera::set_position(const glm::vec3 &pos)
+{
+	m_pos = pos;
+	update_view_matrix();
+}
+
+void camera::relative_move(const glm::vec3 &diff)
+{
+	m_pos += glm::vec3(glm::inverse(m_mat_view) * glm::vec4(diff, 0));
+	update_view_matrix();
+}
+
+const glm::vec3 &camera::get_position() const
+{
+	return m_pos;
+}
+
 void camera::set_direction(const glm::vec3 &dir)
 {
 	m_direction = dir;

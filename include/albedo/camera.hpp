@@ -66,6 +66,7 @@ public:
 
 	// For moving the camera
 	void set_position(const glm::vec3 &pos);
+	void relative_move(const glm::vec3 &diff);
 	const glm::vec3 &get_position() const;
 	
 	// For pointing the camera
