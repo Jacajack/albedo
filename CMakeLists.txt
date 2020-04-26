@@ -62,7 +62,6 @@ link_libraries(
 
 add_library(
 	albedo
-	"${PROJECT_SOURCE_DIR}/albedo.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/debug.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/window.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/shader.cpp"
@@ -70,7 +69,10 @@ add_library(
 	"${PROJECT_SOURCE_DIR}/gl/buffer.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/vertex_array.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/texture.cpp"
+	"${PROJECT_SOURCE_DIR}/gl/uniform.cpp"
 	"${PROJECT_SOURCE_DIR}/mesh.cpp"
 	"${PROJECT_SOURCE_DIR}/simple_loaders.cpp"
 	"${PROJECT_SOURCE_DIR}/fixed_vao.cpp"
+	"${PROJECT_SOURCE_DIR}/camera.cpp"
+	"${PROJECT_SOURCE_DIR}/albedo.cpp"
 )
