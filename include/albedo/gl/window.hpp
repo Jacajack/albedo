@@ -43,13 +43,16 @@ public:
 	}
 
 	//! Runs provided function in a loop until the window is closed. Does buffer swapping and event polling
-	void run_main_loop(std::function<void()> f)
+	void run_main_loop(std::function<void(double dt)> f)
 	{
+		double t = 0.0, tlast = 0.0;
 		while (!should_close())
 		{
-			if (f) f();
+			if (f) f(t - tlast);
 			glfwPollEvents();
 			glfwSwapBuffers(this->get());
+			tlast = t;
+			t = glfwGetTime();
 		}
 	}
 
