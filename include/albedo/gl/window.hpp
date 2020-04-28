@@ -13,6 +13,10 @@ namespace gl {
 
 class window_builder;
 
+/**
+	\todo Implement mouse and keyboard inputs as separate classes
+	iterfacing with window::control_block
+*/
 
 /**
     A wrapper for GLFWwindow
@@ -129,6 +133,13 @@ private:
 class window::mouse_handler
 {
 	friend class window;
+
+public:
+	glm::vec2 get_position() const
+	{
+		return {m_x, m_y};
+	}
+
 private:
 	void button_callback(int button, int action, int mods);
 	void position_callback(double x, double y);
