@@ -6,11 +6,13 @@
 #include <functional>
 #include <initializer_list>
 #include <albedo/gl/gl.hpp>
+#include <map>
 
 namespace abd {
 namespace gl {
 
 class window_builder;
+
 
 /**
     A wrapper for GLFWwindow
@@ -18,7 +20,15 @@ class window_builder;
 class window
 {
 public:
+	class keyboard_handler;
+	class mouse_handler;
+	struct control_block;
 	using hint = std::pair<int, int>;
+
+	// Static functions - GLFW callback handlers
+	static void keyboard_callback(GLFWwindow *win, int key, int scancode, int action, int mods);
+	static void mouse_button_callback(GLFWwindow *win, int button, int action, int mods);
+	static void cursor_position_callback(GLFWwindow *win, double x, double y);
 
 	static inline void set_global_hint(const hint &h)
 	{
@@ -42,6 +52,10 @@ public:
 		return m_window.get();
 	}
 
+	// Provide access to the mouse and keyboard handlers
+	keyboard_handler &get_keyboard_handler();
+	mouse_handler &get_mouse_handler();
+
 	//! Runs provided function in a loop until the window is closed. Does buffer swapping and event polling
 	void run_main_loop(std::function<void(double dt)> f)
 	{
@@ -62,6 +76,74 @@ public:
 
 private:
 	std::unique_ptr<GLFWwindow, void (*)(GLFWwindow *)> m_window;
+	std::unique_ptr<control_block> m_control_block;
+};
+
+/**
+	Handles GLFW keyboard events and makes handling
+	keyboard more convenient
+*/
+class window::keyboard_handler
+{
+	friend class window;
+
+public:
+	struct key_status
+	{
+		int action;
+		int mods;
+		bool is_pressed;
+	};
+
+	const key_status &get_key_by_scancode(int scancode) const
+	{
+		const static key_status def = {0, 0, 0};
+
+		try
+		{
+			return m_keyboard_status.at(scancode);
+		}
+		catch(const std::out_of_range &ex)
+		{
+			return def;
+		}
+		
+	}
+
+	const key_status &get_key(int key) const
+	{
+		return get_key_by_scancode(glfwGetKeyScancode(key));
+	}
+
+private:
+	void callback(int key, int scancode, int action, int mods);
+
+	//! Last action registered for each scancode
+	std::map<int, key_status> m_keyboard_status;
+};
+
+/**
+	Handles GLFW mouse events and makes handling mouse
+	stuff more convenient
+*/
+class window::mouse_handler
+{
+	friend class window;
+private:
+	void button_callback(int button, int action, int mods);
+	void position_callback(double x, double y);
+
+	double m_x, m_y;
+};
+
+/**
+	Contains all the window resources that need to be referenced
+	through GLFW window's user pointer and hence need to be immovable.
+*/
+struct window::control_block
+{
+	window::mouse_handler mouse;
+	window::keyboard_handler keyboard;
 };
 
 /**

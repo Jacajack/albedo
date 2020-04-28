@@ -5,8 +5,37 @@ using abd::gl::window;
 using abd::gl::window_builder;
 
 
+/**
+	Passes keyboard event to the window's keyboard handler
+*/
+void window::keyboard_callback(GLFWwindow *win, int key, int scancode, int action, int mods)
+{
+	auto *cb = reinterpret_cast<control_block*>(glfwGetWindowUserPointer(win));
+	if (cb) cb->keyboard.callback(key, scancode, action, mods);
+}
+
+/**
+	Passes mouse button event to the window's mouse handler
+*/
+void window::mouse_button_callback(GLFWwindow *win, int button, int action, int mods)
+{
+	auto *cb = reinterpret_cast<control_block*>(glfwGetWindowUserPointer(win));
+	if (cb) cb->mouse.button_callback(button, action, mods);
+}
+
+/**
+	Passes mouse movement event to the window's mouse handler
+*/
+void window::cursor_position_callback(GLFWwindow *win, double x, double y)
+{
+	auto *cb = reinterpret_cast<control_block*>(glfwGetWindowUserPointer(win));
+	if (cb) cb->mouse.position_callback(x, y);
+}
+
+
 window::window(int resx, int resy, const std::string &title, const window_builder &builder) :
-	m_window(nullptr, nullptr)
+	m_window(nullptr, nullptr),
+	m_control_block(std::make_unique<control_block>())
 {
 	// Set all hints
 	glfwDefaultWindowHints();
@@ -22,10 +51,26 @@ window::window(int resx, int resy, const std::string &title, const window_builde
 	if (!m_window)
 		throw abd::exception("failed to create GLFW window");
 
+	// Set GLFW user pointer and callbacks
+	glfwSetWindowUserPointer(m_window.get(), m_control_block.get());
+	glfwSetKeyCallback(m_window.get(), window::keyboard_callback);
+	glfwSetCursorPosCallback(m_window.get(), window::cursor_position_callback);
+	glfwSetMouseButtonCallback(m_window.get(), window::mouse_button_callback);
+
 	// Make context current and initialize context
 	make_current();
 	if (glewInit() != GLEW_OK)
 		throw abd::exception("glewInit() failed during window creation");
+}
+
+window::keyboard_handler &window::get_keyboard_handler()
+{
+	return m_control_block->keyboard;
+}
+
+window::mouse_handler &window::get_mouse_handler()
+{
+	return m_control_block->mouse;
 }
 
 void window::make_current() const
@@ -53,4 +98,20 @@ std::vector<window::hint> window_builder::to_hints() const
 		{GLFW_OPENGL_PROFILE, m_profile},
 		{GLFW_SAMPLES, m_samples},
 	};
+}
+
+
+void window::keyboard_handler::callback(int key, int scancode, int action, int mods)
+{
+	m_keyboard_status[scancode] = {action, mods, action != GLFW_RELEASE};
+}
+
+void window::mouse_handler::button_callback(int button, int action, int mods)
+{
+}
+
+void window::mouse_handler::position_callback(double x, double y)
+{
+	m_x = x;
+	m_y = y;
 }
