@@ -27,9 +27,9 @@ template <>
 struct texture_target_traits<texture_target::TEXTURE_2D>
 {
 	static constexpr bool is_multisample = false;
-	static constexpr bool is_array = false;
+	static constexpr bool is_layered = false;
 	static constexpr int dimensions = 2;
-	static constexpr int storage_dimensions = dimensions + is_array;
+	static constexpr int storage_dimensions = dimensions + is_layered;
 };
 
 
@@ -56,11 +56,14 @@ class texture : public gl_object<gl_object_type::TEXTURE>
 public:
 	texture();
 
-	void bind(int unit);
-	
+	void bind_texture(int unit);
+	void bind_image(GLuint unit, GLint level, GLenum access);
+	void bind_image(GLuint unit, GLint level, GLint layer, GLenum access);
+
+
 	inline texture_target get_target() const;
 
-	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt);
+	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalformat);
 
 	void storage_1d(abd::gl::texture_format internalformat, GLsizei width, GLsizei levels = 1);
 	void storage_2d(abd::gl::texture_format internalformat, GLsizei width, GLsizei height, GLsizei levels = 1);
@@ -86,6 +89,7 @@ public:
 private:
 	texture_format m_format;
 	texture_target m_target;
+	GLuint m_layers = 0;
 };
 
 template <texture_target Ttarget>
@@ -102,9 +106,29 @@ texture<Ttarget>::texture() :
 }
 
 template <texture_target Ttarget>
-void texture<Ttarget>::bind(int unit)
+void texture<Ttarget>::bind_texture(int unit)
 {
 	glBindTextureUnit(unit, *this);
+}
+
+/**
+	For non-layered textures - always binds layer 0.
+	For layered textures - binds all layers
+*/
+template <texture_target Ttarget>
+void texture<Ttarget>::bind_image(GLuint unit, GLint level, GLenum access)
+{
+	glBindTextureImage(unit, *this, level, texture_target_traits<Ttarget>::is_layered, 0, access, m_format);
+}
+
+/**
+	Binds one layer of a layered texture
+*/
+template <texture_target Ttarget>
+void texture<Ttarget>::bind_image(GLuint unit, GLint level, GLint layer, GLenum access)
+{
+	static_assert(texture_target_traits<Ttarget>::is_layered, "Cannot use this on non-layered texture!");
+	glBindTextureImage(unit, *this, level, GL_FALSE, layer, access, m_format);
 }
 
 template <texture_target Ttarget>
@@ -129,7 +153,7 @@ void texture<Ttarget>::storage_2d(abd::gl::texture_format internalformat, GLsize
 }
 
 template <texture_target Ttarget>
-void texture<Ttarget>::storage_3d(abd::gl::texture_format internalformat, GLsizei width, GLsizei height, GLsizei depth,GLsizei levels)
+void texture<Ttarget>::storage_3d(abd::gl::texture_format internalformat, GLsizei width, GLsizei height, GLsizei depth, GLsizei levels)
 {
 	static_assert(texture_target_traits<Ttarget>::storage_dimensions == 3, "Cannot create texture storage with this function!");
 	glTextureStorage3D(*this, levels, static_cast<GLenum>(internalformat), width, height, depth);
@@ -145,18 +169,21 @@ void texture<Ttarget>::storage_2d_multisample(abd::gl::texture_format internalfo
 template <texture_target Ttarget>
 void texture<Ttarget>::subimage_1d(GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels)
 {
+	static_assert(texture_target_traits<Ttarget>::storage_dimensions == 1, "Cannot provide 1D data for this texture!");
 	glTextureSubImage1D(*this, level, xoffset, width, format, type, pixels);
 }
 
 template <texture_target Ttarget>
 void texture<Ttarget>::subimage_2d(GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels)
 {
+	static_assert(texture_target_traits<Ttarget>::storage_dimensions == 2, "Cannot provide 2D data for this texture!");
 	glTextureSubImage2D(*this, level, xoffset, yoffset, width, height, format, type, pixels);
 }
 
 template <texture_target Ttarget>
 void texture<Ttarget>::subimage_3d(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels)
 {
+	static_assert(texture_target_traits<Ttarget>::storage_dimensions == 3, "Cannot provide 3D data for this texture!");
 	glTextureSubImage3D(*this, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels);
 }
 
@@ -199,12 +226,14 @@ void texture<Ttarget>::set_wrap_s(GLenum wrap)
 template <texture_target Ttarget>
 void texture<Ttarget>::set_wrap_t(GLenum wrap)
 {
+	static_assert(texture_target_traits<Ttarget>::dimensions >= 2, "T wrapping is not available for this texture type");
 	set_parameter<GLint>(GL_TEXTURE_WRAP_T, wrap);
 }
 
 template <texture_target Ttarget>
 void texture<Ttarget>::set_wrap_r(GLenum wrap)
 {
+	static_assert(texture_target_traits<Ttarget>::dimensions == 3, "T wrapping is not available for this texture type");
 	set_parameter<GLint>(GL_TEXTURE_WRAP_R, wrap);
 }
 
