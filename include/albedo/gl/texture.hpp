@@ -20,123 +20,195 @@ enum class texture_target
 	TEXTURE_2D_MULTISAMPLE_ARRAY = GL_TEXTURE_2D_MULTISAMPLE_ARRAY,
 };
 
-enum class texture_target_1d
+template <texture_target Ttarget>
+struct texture_target_traits;
+
+template <>
+struct texture_target_traits<texture_target::TEXTURE_2D>
 {
-	TEXTURE_BUFFER = static_cast<int>(texture_target::TEXTURE_BUFFER),
-	TEXTURE_1D = static_cast<int>(texture_target::TEXTURE_1D),
+	static constexpr bool is_multisample = false;
+	static constexpr bool is_array = false;
+	static constexpr int dimensions = 2;
+	static constexpr int storage_dimensions = dimensions + is_array;
 };
 
-enum class texture_target_2d
-{
-	TEXTURE_2D = static_cast<int>(texture_target::TEXTURE_2D),
-	TEXTURE_1D_ARRAY = static_cast<int>(texture_target::TEXTURE_1D_ARRAY),
-	TEXTURE_2D_MULTISAMPLE = static_cast<int>(texture_target::TEXTURE_2D_MULTISAMPLE),
-};
 
-enum class texture_target_3d
+
+enum class texture_format
 {
-	TEXTURE_3D = static_cast<int>(texture_target::TEXTURE_3D),
-	TEXTURE_2D_ARRAY = static_cast<int>(texture_target::TEXTURE_2D_ARRAY),
-	TEXTURE_CUBE_MAP = static_cast<int>(texture_target::TEXTURE_CUBE_MAP),
-	TEXTURE_CUBE_MAP_ARRAY = static_cast<int>(texture_target::TEXTURE_CUBE_MAP_ARRAY),
-	TEXTURE_2D_MULTISAMPLE_ARRAY = static_cast<int>(texture_target::TEXTURE_2D_MULTISAMPLE_ARRAY),
+	RGBA32F = GL_RGBA32F,
+	RGB32F = GL_RGB32F,
+	RG32F = GL_RG32F,
+	R32F = GL_R32F,
+	
+	RGBA8 = GL_RGBA8,
+	RGB8 = GL_RGB8,
+	RG8 = GL_RG8,
+	R8 = GL_R8,
 };
 
 /**
 	Represents any type of OpenGL texture.
 */
+template <texture_target Ttarget>
 class texture : public gl_object<gl_object_type::TEXTURE>
 {
 public:
-	texture(texture_target target);
+	texture();
 
 	void bind(int unit);
-	void generate_mipmap();
+	
+	inline texture_target get_target() const;
 
 	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt);
 
-	void storage_1d(GLsizei levels, GLenum internalformat, GLsizei width);
-	void storage_2d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height);
-	void storage_2d_multisample(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations);
-	void storage_3d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth);
+	void storage_1d(abd::gl::texture_format internalformat, GLsizei width, GLsizei levels = 1);
+	void storage_2d(abd::gl::texture_format internalformat, GLsizei width, GLsizei height, GLsizei levels = 1);
+	void storage_3d(abd::gl::texture_format internalformat, GLsizei width, GLsizei height, GLsizei depth, GLsizei levels = 1);
+	void storage_2d_multisample(abd::gl::texture_format internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations, GLsizei levels = 1);
 
 	void subimage_1d(GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels);
 	void subimage_2d(GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
 	void subimage_3d(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels);
 
-	texture_target get_target() const;
+	void set_min_filter(GLenum type);
+	void set_mag_filter(GLenum type);
+
+	void set_base_level(GLint level);
+	void set_max_level(GLint level);
+	void generate_mipmap();
+
+	void set_wrap_s(GLenum wrap);
+	void set_wrap_t(GLenum wrap);
+	void set_wrap_r(GLenum wrap);
+
 
 private:
+	texture_format m_format;
 	texture_target m_target;
 };
 
-inline texture_target texture::get_target() const
+template <texture_target Ttarget>
+texture_target texture<Ttarget>::get_target() const
 {
 	return m_target;
 }
 
-/**
-	Respresents 1D textures. All incompatible functions are deleted.
-	Storage must be initialized during construction.
-*/
-class texture_1d : public texture
+template <texture_target Ttarget>
+texture<Ttarget>::texture() :
+	gl_object<gl_object_type::TEXTURE>(static_cast<GLenum>(Ttarget)),
+	m_target(Ttarget)
 {
-public:
-	texture_1d(texture_target_1d target, GLsizei levels, GLenum internalformat, GLsizei width);
+}
 
-	// Deleted members
-	void storage_2d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height) = delete;
-	void storage_2d_multisample(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations) = delete;
-	void storage_3d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth) = delete;
-	void subimage_2d(GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels) = delete;
-	void subimage_3d(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels) = delete;
-
-private:
-	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt);
-	void storage_1d(GLsizei levels, GLenum internalformat, GLsizei width);
-};
-
-/**
-	Respresents 2D textures. All incompatible functions are deleted.
-	Storage must be initialized during construction.
-*/
-class texture_2d : public texture
+template <texture_target Ttarget>
+void texture<Ttarget>::bind(int unit)
 {
-public:
-	texture_2d(texture_target_2d target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height);
+	glBindTextureUnit(unit, *this);
+}
 
-	// Deleted members
-	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt) = delete;
-	void storage_1d(GLsizei levels, GLenum internalformat, GLsizei width) = delete;
-	void storage_2d_multisample(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations) = delete;
-	void storage_3d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth) = delete;
-	void subimage_1d(GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels) = delete;
-	void subimage_3d(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels) = delete;
-
-private:
-	void storage_2d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height);
-};
-
-/**
-	Respresents 3D textures. All incompatible functions are deleted.
-	Storage must be initialized during construction.
-*/
-class texture_3d : public texture
+template <texture_target Ttarget>
+void texture<Ttarget>::attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt)
 {
-public:
-	texture_3d(texture_target_3d target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth);
+	static_assert(Ttarget == texture_target::TEXTURE_BUFFER, "Not a buffer texture target!");
+	glTextureBuffer(*this, internalforamt, buffer);
+}
 
-	// Deleted members
-	void attach_buffer(const abd::gl::buffer &buffer, GLenum internalforamt) = delete;
-	void storage_1d(GLsizei levels, GLenum internalformat, GLsizei width) = delete;
-	void storage_2d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height) = delete;
-	void storage_2d_multisample(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations) = delete;
-	void subimage_1d(GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels) = delete;
-	void subimage_2d(GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels) = delete;
+template <texture_target Ttarget>
+void texture<Ttarget>::storage_1d(abd::gl::texture_format internalformat, GLsizei width, GLsizei levels)
+{
+	static_assert(texture_target_traits<Ttarget>::storage_dimensions == 1, "Cannot create texture storage with this function!");
+	glTextureStorage1D(*this, levels, static_cast<GLenum>(internalformat), width);
+}
 
-private:
-	void storage_3d(GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth);
-};
+template <texture_target Ttarget>
+void texture<Ttarget>::storage_2d(abd::gl::texture_format internalformat, GLsizei width, GLsizei height, GLsizei levels)
+{
+	static_assert(texture_target_traits<Ttarget>::storage_dimensions == 2, "Cannot create texture storage with this function!");
+	glTextureStorage2D(*this, levels, static_cast<GLenum>(internalformat), width, height);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::storage_3d(abd::gl::texture_format internalformat, GLsizei width, GLsizei height, GLsizei depth,GLsizei levels)
+{
+	static_assert(texture_target_traits<Ttarget>::storage_dimensions == 3, "Cannot create texture storage with this function!");
+	glTextureStorage3D(*this, levels, static_cast<GLenum>(internalformat), width, height, depth);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::storage_2d_multisample(abd::gl::texture_format internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations, GLsizei levels)
+{
+	static_assert(Ttarget == texture_target::TEXTURE_2D_MULTISAMPLE, "Target is not a multisample texture!");
+	glTextureStorage2DMultisample(*this, levels, static_cast<GLenum>(internalformat), width, height, fixedsamplelocations);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::subimage_1d(GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels)
+{
+	glTextureSubImage1D(*this, level, xoffset, width, format, type, pixels);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::subimage_2d(GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels)
+{
+	glTextureSubImage2D(*this, level, xoffset, yoffset, width, height, format, type, pixels);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::subimage_3d(GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels)
+{
+	glTextureSubImage3D(*this, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::set_min_filter(GLenum type)
+{
+	set_parameter<GLint>(GL_TEXTURE_MIN_FILTER, type);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::set_mag_filter(GLenum type)
+{
+	set_parameter<GLint>(GL_TEXTURE_MAG_FILTER, type);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::set_base_level(GLint level)
+{
+	set_parameter<GLint>(GL_TEXTURE_BASE_LEVEL, level);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::set_max_level(GLint level)
+{
+	set_parameter<GLint>(GL_TEXTURE_MAX_LEVEL, level);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::generate_mipmap()
+{
+	glGenerateTextureMipmap(*this);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::set_wrap_s(GLenum wrap)
+{
+	set_parameter<GLint>(GL_TEXTURE_WRAP_S, wrap);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::set_wrap_t(GLenum wrap)
+{
+	set_parameter<GLint>(GL_TEXTURE_WRAP_T, wrap);
+}
+
+template <texture_target Ttarget>
+void texture<Ttarget>::set_wrap_r(GLenum wrap)
+{
+	set_parameter<GLint>(GL_TEXTURE_WRAP_R, wrap);
+}
+
+
 
 }
 }

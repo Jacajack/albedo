@@ -37,7 +37,7 @@ set( CXX_FLAGS_RELEASE_LIST
 	"-O3"
 	"-ffast-math"
 	"-ftree-vectorize"
-	"-flto"
+	#"-flto"
 	"-march=native"
 	"-DNDEBUG"
 )
@@ -68,7 +68,6 @@ add_library(
 	"${PROJECT_SOURCE_DIR}/gl/program.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/buffer.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/vertex_array.cpp"
-	"${PROJECT_SOURCE_DIR}/gl/texture.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/uniform.cpp"
 	"${PROJECT_SOURCE_DIR}/mesh.cpp"
 	"${PROJECT_SOURCE_DIR}/simple_loaders.cpp"
