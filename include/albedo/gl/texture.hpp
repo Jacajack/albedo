@@ -3,8 +3,7 @@
 #include <albedo/gl/gl_object.hpp>
 #include <albedo/gl/buffer.hpp>
 
-namespace abd {
-namespace gl {
+namespace abd::gl {
 
 enum class texture_target
 {
@@ -36,15 +35,25 @@ struct texture_target_traits<texture_target::TEXTURE_2D>
 
 enum class texture_format
 {
+	UNDEFINED = 0,
+
 	RGBA32F = GL_RGBA32F,
 	RGB32F = GL_RGB32F,
 	RG32F = GL_RG32F,
 	R32F = GL_R32F,
+
+	RGBA16F = GL_RGBA16F,
+	RGB16F = GL_RGB16F,
+	RG16F = GL_RG16F,
+	R16F = GL_R16F,
 	
 	RGBA8 = GL_RGBA8,
 	RGB8 = GL_RGB8,
 	RG8 = GL_RG8,
 	R8 = GL_R8,
+
+	DEPTH_32F = GL_DEPTH_COMPONENT32F,
+	DEPTH_32 = GL_DEPTH_COMPONENT32
 };
 
 /**
@@ -87,7 +96,7 @@ public:
 
 
 private:
-	texture_format m_format;
+	texture_format m_format = texture_format::UNDEFINED;
 	texture_target m_target;
 	GLuint m_layers = 0;
 };
@@ -239,5 +248,4 @@ void texture<Ttarget>::set_wrap_r(GLenum wrap)
 
 
 
-}
-}
+} // namespace abd::gl

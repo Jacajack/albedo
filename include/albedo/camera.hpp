@@ -12,9 +12,14 @@ namespace abd {
 class projection
 {
 public:
+	projection(const projection &) = default;
+	projection(projection &&) = default;
+	projection &operator=(const projection &) = default;
+	projection &operator=(projection &&) = default;
+	virtual ~projection() = default;
+
 	virtual const glm::mat4 &get_matrix() const = 0;
 	virtual operator glm::mat4() const = 0;
-	virtual ~projection() = default;
 };
 
 /**
@@ -24,10 +29,9 @@ class perspective : public projection
 {
 public:
 	perspective(float fov, float aspect, float near, float far);
-	virtual ~perspective() = default;
 
-	virtual const glm::mat4 &get_matrix() const override;
-	virtual operator glm::mat4() const override;
+	const glm::mat4 &get_matrix() const override;
+	operator glm::mat4() const override;
 
 	void set_fov(float fov);
 	void set_fov(float focal_length, float frame_width);

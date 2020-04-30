@@ -8,8 +8,7 @@
 #include <albedo/gl/gl.hpp>
 #include <map>
 
-namespace abd {
-namespace gl {
+namespace abd::gl {
 
 class window_builder;
 
@@ -229,5 +228,4 @@ private:
 	GLFWwindow *m_parent = nullptr;
 };
 
-}
-}
+} // namespace abd::gl
