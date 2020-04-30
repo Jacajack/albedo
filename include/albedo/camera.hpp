@@ -12,6 +12,7 @@ namespace abd {
 class projection
 {
 public:
+	projection() = default;
 	projection(const projection &) = default;
 	projection(projection &&) = default;
 	projection &operator=(const projection &) = default;
