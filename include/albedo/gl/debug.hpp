@@ -4,8 +4,7 @@
 #include <albedo/utils.hpp>
 #include <string>
 
-namespace abd {
-namespace gl {
+namespace abd::gl {
 
 /**
 	The global OpenGL debug message handler
@@ -30,9 +29,16 @@ public:
 	debug_group_object(GLuint id, const char *message);
 	~debug_group_object();	
 
+	debug_group_object(const debug_group_object &) = delete;
+	debug_group_object &operator=(const debug_group_object &) = delete;
+
 	debug_group_object(debug_group_object &&) = delete;
 	debug_group_object &operator=(debug_group_object &&) = delete;
 };
 
-}
-}
+/**
+	Converts a GLenum value to a corresponding string
+*/
+const char *enum_to_str(GLenum val);
+
+} // namespace abd::gl

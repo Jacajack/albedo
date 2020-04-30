@@ -1,16 +1,17 @@
 #include <albedo/gl/debug.hpp>
 #include <unordered_map>
 #include <iostream>
+#include <map>
 
 using abd::gl::debug_group_object;
 
 void APIENTRY abd::gl::gl_debug_callback(GLenum source,
-                                GLenum type,
-                                GLuint id,
-                                GLenum severity,
-                                GLsizei length,
-                                const GLchar *message_cstr,
-                                const void *user_param)
+        GLenum type,
+        GLuint id,
+        GLenum severity,
+        GLsizei length,
+        const GLchar *message_cstr,
+        const void *user_param)
 {
 	static const std::unordered_map<GLenum, std::string> source_names
 	{
@@ -64,4 +65,13 @@ debug_group_object::debug_group_object(GLuint id, const char *message)
 debug_group_object::~debug_group_object()
 {
 	glPopDebugGroup();
+}
+
+const char *abd::gl::enum_to_str(GLenum value)
+{
+	const static std::map<GLenum, const char *> names =
+	{
+		#include <enum_map/enum_map.hpp>
+	};
+	return names.at(value);
 }
