@@ -95,4 +95,4 @@ private:
 	glm::vec3 m_up;
 };
 
-}
+} // namespace abd
