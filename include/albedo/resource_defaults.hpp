@@ -13,15 +13,15 @@ namespace abd {
 */
 using default_resource_engine = abd::resource_engine<mesh>;
 
-/*
-	Below are specializations of default loaders for differend resource types
+/**
+	Below are definitions of default resource loaders
 */
 
 template <>
-typename abd::resource<abd::mesh_data>::default_loader_type abd::resource<abd::mesh_data>::default_loader = 
-[](const boost::filesystem::path &path)->std::unique_ptr<mesh_data>
+typename abd::resource<abd::mesh>::default_loader_type abd::resource<abd::mesh>::default_loader = 
+[](const boost::filesystem::path &path)->std::unique_ptr<mesh>
 {
-	return std::make_unique<abd::mesh_data>(abd::assimp_simple_load_mesh(path.string()));
+	return std::make_unique<abd::mesh>(abd::assimp_simple_load_mesh(path.string()));
 };
 
 }
