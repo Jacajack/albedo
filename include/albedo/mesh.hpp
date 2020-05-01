@@ -6,6 +6,7 @@
 #include <albedo/gl/vertex_array.hpp>
 #include <albedo/material.hpp>
 #include <albedo/fixed_vao.hpp>
+#include <albedo/resource.hpp>
 #include <vector>
 
 namespace abd {
@@ -22,6 +23,7 @@ struct mesh_data
 {
 	std::vector<GLint> base_indices;
 	std::vector<GLint> draw_sizes;
+	std::vector<material> materials;
 
 	std::vector<GLuint> indices;
 	std::vector<glm::vec3> positions;
@@ -53,17 +55,33 @@ private:
 
 
 /**
-	Represents a compund mesh. Contains owning pointer to mesh_buffers class.
+	Owns mesh_data and mesh_buffers.
+	Guarantees that mesh_buffers are populated with the data from mesh_data
 */
-class mesh
+class mesh : public abd::resource<mesh>
 {
+public:
+	template <typename T, typename = std::enable_if<std::is_same_v<std::decay_t<T>, mesh_data>>>
+	mesh(T &&data) :
+		m_data(std::forward<mesh_data>(data)),
+		m_buffers(std::make_unique<mesh_buffers>(m_data))
+	{
+	}
+
+	const mesh_data &get_data() const
+	{
+		return m_data;
+	}
+
+	const mesh_buffers &get_buffers() const
+	{
+		return *m_buffers;
+	}
 
 private:
 	mesh_data m_data;
 	std::unique_ptr<mesh_buffers> m_buffers;
 };
-
-
 
 
 }
