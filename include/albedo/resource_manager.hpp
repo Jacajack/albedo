@@ -15,6 +15,11 @@ class resource : abd::noncopy
 {
 public:
 	using index_type = std::uint64_t;
+	using path_type = boost::filesystem::path;
+	using resource_loader = std::function<std::unique_ptr<T>(const path_type&)>;
+	using default_loader_type = const resource_loader;
+
+	static inline default_loader_type default_loader;
 
 	resource() :
 		m_id(m_id_counter++)
@@ -49,10 +54,8 @@ class resource_manager
 
 public:
 	using name_type = std::string;
-	using path_type = boost::filesystem::path;
-	using resource_loader = std::function<std::unique_ptr<T>(const path_type&)>;
-
-	resource_manager(const resource_loader &default_loader);
+	using path_type = typename abd::resource<T>::path_type;
+	using resource_loader = typename abd::resource<T>::resource_loader;
 
 	std::shared_ptr<T> load(const resource_loader &loader, const path_type &path, const name_type &name = {});
 	std::shared_ptr<T> load(const path_type &path, const name_type &name = {});
@@ -66,13 +69,6 @@ private:
 	resource_loader m_default_loader;
 	std::map<name_type, std::shared_ptr<T>> m_resources;
 };
-
-
-template <typename T>
-resource_manager<T>::resource_manager(const resource_loader &default_loader) :
-	m_default_loader(default_loader)
-{
-}
 
 /**
 	Delegates loading to the loader function and stores
@@ -103,7 +99,7 @@ std::shared_ptr<T> resource_manager<T>::load(const resource_loader &loader, cons
 template <typename T>
 std::shared_ptr<T> resource_manager<T>::load(const path_type &path, const name_type &name)
 {
-	return load(m_default_loader, path, name);
+	return load(abd::resource<T>::default_loader, path, name);
 }
 
 template <typename T>
@@ -126,5 +122,47 @@ void resource_manager<T>::remove(const name_type &name)
 		throw abd::exception("cannot remove resource in use");
 	m_resources.erase(name);
 }
+
+/**
+	Groups together many resource_manager classes and
+	provides mechanism for resolving which instance is responsible
+	for handling provided type.
+*/
+template <typename T, typename... Ts>
+class resource_engine
+{
+public:
+	template <typename U>
+	resource_manager<T> &get_manager()
+	{
+		if constexpr (std::is_same_v<T, U>)
+			return m_manager;
+		else
+			return m_child_engine.template get_manager<T>();
+	}
+
+private:
+	resource_manager<T> m_manager;
+	resource_engine<Ts...> m_child_engine;
+};
+
+/**
+	Resource engine specialization - to end the recurrence
+*/
+template <typename T>
+class resource_engine<T>
+{
+public:
+	template <typename U>
+	resource_manager<T> &get_manager()
+	{
+		static_assert(std::is_same_v<T, U>, "type is not handled by this resource_engine!");
+		return m_manager;
+	}
+
+private:
+	resource_manager<T> m_manager;
+};
+
 
 }
