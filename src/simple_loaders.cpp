@@ -107,6 +107,9 @@ abd::gl::program abd::simple_load_shader_dir(const boost::filesystem::path &dir)
 {
 	using namespace boost::filesystem;
 
+	if (!exists(dir))
+		throw abd::exception("shader dir does not exist");
+
 	if (!is_directory(dir))
 		throw abd::exception("shader program must be provided in a directory on its own");
 
