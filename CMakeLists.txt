@@ -74,5 +74,7 @@ add_library(
 	"${PROJECT_SOURCE_DIR}/simple_loaders.cpp"
 	"${PROJECT_SOURCE_DIR}/fixed_vao.cpp"
 	"${PROJECT_SOURCE_DIR}/camera.cpp"
+	"${PROJECT_SOURCE_DIR}/resource_defaults.cpp"
+	"${PROJECT_SOURCE_DIR}/renderer.cpp"
 	"${PROJECT_SOURCE_DIR}/albedo.cpp"
 )
