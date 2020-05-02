@@ -5,9 +5,26 @@ using abd::gl::uniform;
 using abd::gl::uniform_block;
 
 /**
+	Creates a null uniform
+*/
+uniform::uniform() :
+	m_program(0),
+	m_location(-1),
+	m_type(0),
+	m_size(0),
+	m_block_index(0),
+	m_offset(0),
+	m_array_stride(0),
+	m_matrix_stride(0),
+	m_is_row_major(false)
+{
+}
+
+/**
+	Creates a uniform reference based on data provided by program class
 */
 uniform::uniform(
-		const gl::program &program,
+		GLuint program,
 		GLint location,
 		GLenum type,
 		GLint size,

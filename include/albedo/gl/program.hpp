@@ -8,8 +8,7 @@
 #include <string>
 #include <map>
 
-namespace abd {
-namespace gl {
+namespace abd::gl {
 
 /**
     Represents RAII wrapper for an OpenGL program object. The RAII here isn't quite perfect, because
@@ -26,7 +25,14 @@ public:
 
 	uniform &get_uniform(const std::string &name) const
 	{
-		return m_uniforms.at(name);
+		try
+		{
+			return m_uniforms.at(name);
+		}
+		catch (const std::out_of_range &ex)
+		{
+			return abd::gl::null_uniform;
+		}
 	}
 
 	uniform_block &get_uniform_block(const std::string &name) const
@@ -137,5 +143,4 @@ program::program(const Tcont &shaders)
 }
 
 
-}
 }

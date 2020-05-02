@@ -2,8 +2,7 @@
 
 #include <albedo/gl/gl_object.hpp>
 
-namespace abd {
-namespace gl {
+namespace abd::gl {
 
 // Forward declare program class
 class program;
@@ -19,6 +18,8 @@ class uniform : abd::noncopy
 	friend class program;
 
 public:
+	uniform();
+
 	inline GLuint get_location() const;
 	inline GLenum get_type() const;
 	inline GLint get_size() const;
@@ -28,9 +29,18 @@ public:
 
 	inline operator GLint() const;
 
+	uniform &operator=(GLfloat f) {glProgramUniform1f(m_program, m_location, f); return *this;}
+	uniform &operator=(GLint i) {glProgramUniform1i(m_program, m_location, i); return *this;}
+	uniform &operator=(const glm::vec2 &v) {glProgramUniform2fv(m_program, m_location, 1, &v[0]); return *this;}
+	uniform &operator=(const glm::vec3 &v) {glProgramUniform3fv(m_program, m_location, 1, &v[0]); return *this;}
+	uniform &operator=(const glm::vec4 &v) {glProgramUniform4fv(m_program, m_location, 1, &v[0]); return *this;}
+	uniform &operator=(const glm::mat2 &m) {glProgramUniformMatrix2fv(m_program, m_location, 1, GL_FALSE, &m[0][0]); return *this;}
+	uniform &operator=(const glm::mat3 &m) {glProgramUniformMatrix3fv(m_program, m_location, 1, GL_FALSE, &m[0][0]); return *this;}
+	uniform &operator=(const glm::mat4 &m) {glProgramUniformMatrix4fv(m_program, m_location, 1, GL_FALSE, &m[0][0]); return *this;}
+
 private:
 	uniform(
-		const gl::program &program,
+		GLuint program,
 		GLint location,
 		GLenum type,
 		GLint size,
@@ -50,6 +60,9 @@ private:
 	GLint m_matrix_stride;
 	bool m_is_row_major;
 };
+
+// A null uniform
+static inline uniform null_uniform;
 
 /**
     Returns the uniform location
@@ -97,5 +110,4 @@ private:
 	GLuint m_index;
 };
 
-}
 }
