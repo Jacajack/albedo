@@ -96,11 +96,6 @@ void camera::set_projection_matrix(const glm::mat4 &mat)
 	update_matrix();
 }
 
-glm::mat4 camera::get_projection_matrix() const
-{
-	return m_mat_proj;
-}
-
 void camera::set_position(const glm::vec3 &pos)
 {
 	m_pos = pos;
@@ -133,6 +128,17 @@ void camera::look_at(const glm::vec3 &where)
 const glm::vec3 &camera::get_direction() const
 {
 	return m_direction;
+}
+
+
+const glm::mat4 &camera::get_projection_matrix() const
+{
+	return m_mat_proj;
+}
+
+const glm::mat4 &camera::get_view_matrix() const
+{
+	return m_mat_view;
 }
 
 const glm::mat4 &camera::get_matrix() const

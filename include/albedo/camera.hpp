@@ -67,7 +67,6 @@ public:
 
 	// Perspective settings
 	void set_projection_matrix(const glm::mat4 &mat);
-	glm::mat4 get_projection_matrix() const;
 
 	// For moving the camera
 	void set_position(const glm::vec3 &pos);
@@ -79,7 +78,9 @@ public:
 	void look_at(const glm::vec3 &where);
 	const glm::vec3 &get_direction() const;
 
-	// For retrieving view-projection matrix
+	// For retrieving matrices
+	const glm::mat4 &get_projection_matrix() const;
+	const glm::mat4 &get_view_matrix() const;
 	const glm::mat4 &get_matrix() const;
 	operator glm::mat4() const;
 
