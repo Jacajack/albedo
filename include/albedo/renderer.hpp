@@ -33,6 +33,14 @@ struct draw_task_list
 
 /**
 	Deferred renderer.
+
+	Standard MRT layout for the deferred renderer is:
+	layout (location = 0) out vec3 f_color;
+	layout (location = 1) out vec3 f_pos;
+	layout (location = 2) out vec3 f_normal;
+	layout (location = 3) out vec3 f_diffuse;
+	layout (location = 4) out vec3 f_specular;
+
 */
 class deferred_renderer
 {
@@ -41,6 +49,7 @@ public:
 
 	void render_geometry(abd::draw_task_list draw_tasks, const abd::camera &camera);
 
+	const abd::gl::framebuffer &get_fbo() const {return m_fbo;}
 
 private:
 

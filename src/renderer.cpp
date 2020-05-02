@@ -1,6 +1,7 @@
 #include <albedo/renderer.hpp>
 #include <albedo/exception.hpp>
 #include <albedo/simple_loaders.hpp>
+#include <albedo/gl/debug.hpp>
 #include <iostream>
 
 using abd::deferred_renderer;
@@ -73,20 +74,29 @@ deferred_renderer::deferred_renderer(int width, int height) :
 
 void deferred_renderer::render_geometry(abd::draw_task_list draw_tasks, const abd::camera &camera)
 {
+	abd::gl::debug_group d(0, "abd::deferred_renderer geometry pass");
+
 	// Beginning of the geometry pass - bind MRT FBO, VAO and proper program
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
 	m_vao.bind();
 	m_geometry_program->use();
 
+	// Clear buffers and enable depth test
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+
 	// Some uniforms
-	// auto &uni_mat_model = m_geometry_program->get_uniform("mat_model");
-	// auto &uni_mat_view = m_geometry_program->get_uniform("mat_view");
-	// auto &uni_mat_proj = m_geometry_program->get_uniform("mat_proj");
-	// auto &uni_mat_vp = m_geometry_program->get_uniform("mat_vp");
+	auto &uni_mat_model = m_geometry_program->get_uniform("mat_model");
+	auto &uni_mat_view = m_geometry_program->get_uniform("mat_view");
+	auto &uni_mat_proj = m_geometry_program->get_uniform("mat_proj");
+	auto &uni_mat_vp = m_geometry_program->get_uniform("mat_vp");
+	auto &uni_mat_mvp = m_geometry_program->get_uniform("mat_mvp");
 
 	// Pass view and projection matrices to the shader
-	// TODO
-	// glUniformMatrix4fv(uni_mat_view, 1, GL_FALSE, &camera.get_matrix()[0][0]);
+	uni_mat_view = camera.get_view_matrix();
+	uni_mat_proj = camera.get_projection_matrix();
+	uni_mat_vp = camera;
 
 	//! \todo sort mesh draw_tasks to minimize context-changes
 	// Execute every draw task
@@ -98,8 +108,10 @@ void deferred_renderer::render_geometry(abd::draw_task_list draw_tasks, const ab
 
 		mesh_buffers.bind_index_buffer();
 		mesh_buffers.bind_to_vao(m_vao);
-		// glUniformMatrix4fv(uni_mat_model, 1, GL_FALSE, &task.transform[0][0]); // FIXME
-		// TODO pass MVP matrix
+
+		// Update model matrix
+		uni_mat_model = task.transform;
+		uni_mat_mvp = camera.get_matrix() * task.transform;
 
 		//! \todo replace with glMutliDraw*()
 		// Draw all sub-meshes one by one
