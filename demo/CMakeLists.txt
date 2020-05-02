@@ -37,7 +37,7 @@ set( CXX_FLAGS_RELEASE_LIST
 	"-O3"
 	"-ffast-math"
 	"-ftree-vectorize"
-	"-flto"
+	#"-flto"
 	"-march=native"
 	"-DNDEBUG"
 )

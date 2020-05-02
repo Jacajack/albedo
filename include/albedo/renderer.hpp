@@ -4,9 +4,32 @@
 #include <albedo/gl/texture.hpp>
 #include <albedo/gl/program.hpp>
 #include <albedo/scene.hpp>
+#include <albedo/camera.hpp>
 #include <memory>
 
 namespace abd {
+
+/**
+	Contains all information required to draw a mesh
+*/
+struct mesh_draw_task
+{
+	glm::mat4 transform;
+	std::shared_ptr<abd::mesh> mesh_ptr;
+};
+
+/**
+	Groups together different types draws tasks that
+	will later to be executed in different phases of
+	the rendering process
+*/
+struct draw_task_list
+{
+	std::vector<mesh_draw_task> mesh_draw_tasks;
+	// transparent/translucent draw tasks
+	// light_draw_tasks
+	// special draw tasks (grass and stuff)
+};
 
 /**
 	Deferred renderer.
@@ -16,13 +39,8 @@ class deferred_renderer
 public:
 	deferred_renderer(int width, int height);
 
-	/**
-		Renders entire scene
-	*/
-	void render_scene(const abd::scene &scene);
+	void render_geometry(abd::draw_task_list draw_tasks, const abd::camera &camera);
 
-	void begin_geometry_pass();
-	void begin_shading_pass();
 
 private:
 
