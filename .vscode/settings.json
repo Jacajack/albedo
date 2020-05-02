@@ -77,5 +77,10 @@
 		"typeinfo": "cpp",
 		"valarray": "cpp",
 		"variant": "cpp"
-	}
+	},
+	"clang-tidy.compilerArgs": [
+        "--std=c++17",
+		"-Iinclude",
+		"-Iext/include"
+    ],
 }
