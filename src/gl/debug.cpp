@@ -3,7 +3,7 @@
 #include <iostream>
 #include <map>
 
-using abd::gl::debug_group_object;
+using abd::gl::debug_group;
 
 void APIENTRY abd::gl::gl_debug_callback(GLenum source,
         GLenum type,
@@ -52,22 +52,22 @@ void APIENTRY abd::gl::gl_debug_callback(GLenum source,
 
 
 
-debug_group_object::debug_group_object(GLuint id, const std::string &message) :
-	debug_group_object(id, message.c_str())
+debug_group::debug_group(GLuint id, const std::string &message)
 {
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, id, message.length(), message.data());
 }
 
-debug_group_object::debug_group_object(GLuint id, const char *message)
+debug_group::debug_group(GLuint id, const char *message)
 {
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, id, 0, message);
+	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, id, -1, message);
 }
 
-debug_group_object::~debug_group_object()
+debug_group::~debug_group()
 {
 	glPopDebugGroup();
 }
 
-const char *abd::gl::enum_to_str(GLenum value)
+const char *abd::gl::glenum_to_str(GLenum value)
 {
 	const static std::map<GLenum, const char *> names =
 	{
