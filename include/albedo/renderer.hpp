@@ -23,10 +23,6 @@ struct mesh_draw_task
 /**
 	Contains all information required to perform a shading operation.
 
-	In case of directional lights, the direction can be determined from
-	the transformation matrix. Lights are assumed to shine in the X+ direction
-	by default.
-
 	If the camera is inside the light volume, the task has to be dispatched with
 	the volume type set to GLOBAL, so that the entire screen is shaded. Whether
 	that is the case should be determined by the scene (or whatever issues draw tasks).
@@ -40,16 +36,23 @@ struct light_draw_task
 	*/
 	enum class light_volume_type
 	{
-		GLOBAL,      //!< Affects entire screen area
-		SPHERICAL,   //!< Affects a spherical region 
-		MESH,        //!< Affects a region determined by provided mesh  
+		GLOBAL    = 0,  //!< Affects entire screen area
+		SPHERICAL = 1,  //!< Affects a spherical region 
+		MESH      = 2,  //!< Affects a region determined by provided mesh  
 	};
 
 	light_volume_type volume;
-	glm::mat4 transform;
+	glm::vec3 position;
+	glm::vec3 direction;
+	float attenuation;
+	float angle;
+
 	glm::vec3 color;
 
 	std::shared_ptr<abd::mesh> volume_mesh_ptr;
+
+	//! Necessary for sorting lights
+	bool operator<(const light_draw_task &rhs) const;
 };
 
 
@@ -61,6 +64,7 @@ struct light_draw_task
 struct draw_task_list
 {
 	std::vector<mesh_draw_task> mesh_draw_tasks;
+	std::vector<light_draw_task> light_draw_tasks;
 	// transparent/translucent draw tasks
 	// light_draw_tasks
 	// special draw tasks (grass and stuff)
@@ -82,20 +86,39 @@ struct draw_task_list
 class deferred_renderer
 {
 public:
+	/**
+		Light data passed to the shaders in UBO.
+	*/
+	struct ubo_light_data
+	{
+		GLint light_type;   //!< Determines light type (not the volume type)
+		GLfloat attenuation;
+		GLfloat angle;
+		GLfloat dummy;
+		glm::vec4 color;
+		glm::vec4 position;
+		glm::vec4 direction;
+	};
+
 	deferred_renderer(int width, int height);
 
 	void render_geometry(abd::draw_task_list draw_tasks, const abd::camera &camera);
-	void shading_pass(GLuint output_fbo);
+	void shading_pass(abd::draw_task_list draw_tasks, GLuint output_fbo);
 
 	const abd::gl::framebuffer &get_fbo() const {return m_fbo;}
 
 private:
+	static const int max_light_count = 128;
 
 	/**
 		Contains a quad used for blitting and postprocessing
 	*/
 	abd::gl::buffer m_blit_quad;
 	
+	/**
+		Contains information about all the lights to be processed
+	*/
+	abd::gl::buffer m_lights_buffer;
 
 	/**
 		The main VAO - input stage for the geomatry pass shaders

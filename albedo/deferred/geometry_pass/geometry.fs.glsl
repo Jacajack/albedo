@@ -17,5 +17,6 @@ void main()
 {
 	f_pos = vs_out.v_pos;
 	f_normal = vs_out.v_normal;
-	f_color = f_normal; // debug
+	f_diffuse = vec3(1);
+	// f_color = f_normal; // debug
 }
