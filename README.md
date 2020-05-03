@@ -1,2 +1,4 @@
 # albedo
-Albedo is to be an OpenGL-based game engine.
+This is an excercise OpenGL rendering engine project.
+
+Pics will be below:
