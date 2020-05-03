@@ -18,6 +18,41 @@ struct mesh_draw_task
 	std::shared_ptr<abd::mesh> mesh_ptr;
 };
 
+
+
+/**
+	Contains all information required to perform a shading operation.
+
+	In case of directional lights, the direction can be determined from
+	the transformation matrix. Lights are assumed to shine in the X+ direction
+	by default.
+
+	If the camera is inside the light volume, the task has to be dispatched with
+	the volume type set to GLOBAL, so that the entire screen is shaded. Whether
+	that is the case should be determined by the scene (or whatever issues draw tasks).
+
+	The pointer volume_mesh_ptr is only checked if volume type is set to MESH.
+*/
+struct light_draw_task
+{
+	/**
+		Determines the light volume drawn during shading
+	*/
+	enum class light_volume_type
+	{
+		GLOBAL,      //!< Affects entire screen area
+		SPHERICAL,   //!< Affects a spherical region 
+		MESH,        //!< Affects a region determined by provided mesh  
+	};
+
+	light_volume_type volume;
+	glm::mat4 transform;
+	glm::vec3 color;
+
+	std::shared_ptr<abd::mesh> volume_mesh_ptr;
+};
+
+
 /**
 	Groups together different types draws tasks that
 	will later to be executed in different phases of
@@ -34,6 +69,8 @@ struct draw_task_list
 /**
 	Deferred renderer.
 
+	\todo optimize G-buffer layout
+
 	Standard MRT layout for the deferred renderer is:
 	layout (location = 0) out vec3 f_color;
 	layout (location = 1) out vec3 f_pos;
@@ -48,11 +85,16 @@ public:
 	deferred_renderer(int width, int height);
 
 	void render_geometry(abd::draw_task_list draw_tasks, const abd::camera &camera);
+	void shading_pass(GLuint output_fbo);
 
 	const abd::gl::framebuffer &get_fbo() const {return m_fbo;}
 
 private:
 
+	/**
+		Contains a quad used for blitting and postprocessing
+	*/
+	abd::gl::buffer m_blit_quad;
 	
 
 	/**
@@ -104,6 +146,7 @@ private:
 
 	std::unique_ptr<gl::program> m_geometry_program;
 	std::unique_ptr<gl::program> m_shading_program;
+	std::unique_ptr<gl::program> m_blit_program;
 };
 
 /**

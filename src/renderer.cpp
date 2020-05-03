@@ -3,10 +3,12 @@
 #include <albedo/simple_loaders.hpp>
 #include <albedo/gl/debug.hpp>
 #include <iostream>
+#include <array>
 
 using abd::deferred_renderer;
 
 deferred_renderer::deferred_renderer(int width, int height) :
+	m_blit_quad(6 * 3 * sizeof(float), nullptr, GL_DYNAMIC_STORAGE_BIT),
 	m_fbo_width(width),
 	m_fbo_height(height)
 {
@@ -15,6 +17,7 @@ deferred_renderer::deferred_renderer(int width, int height) :
 	{
 		m_geometry_program = std::make_unique<gl::program>(abd::simple_load_shader_dir("albedo/deferred/geometry_pass"));
 		m_shading_program = std::make_unique<gl::program>(abd::simple_load_shader_dir("albedo/deferred/shading"));
+		m_blit_program = std::make_unique<gl::program>(abd::simple_load_shader_dir("albedo/deferred/blit"));
 	}
 	catch (const std::exception &ex)
 	{
@@ -22,11 +25,24 @@ deferred_renderer::deferred_renderer(int width, int height) :
 		throw abd::exception("deferred_renderer could not load essential shaders");
 	}
 
+	// The blit quad
+	std::array<float, 18> quad_data =
+	{
+		-1, -1, 0,
+		1, -1, 0,
+		-1, 1, 0,
+		
+		-1, 1, 0,
+		1, -1, 0,
+		1, 1, 0,
+	};
+	m_blit_quad.write(0, quad_data.size() * sizeof(float), quad_data.data());
+
 	// Create depth texture
 	m_depth_buffer.storage_2d(gl::texture_format::DEPTH_32F, width, height);
 	m_depth_buffer.set_min_filter(GL_LINEAR);
 	m_depth_buffer.set_mag_filter(GL_LINEAR);
-	m_fbo.attach_texture(GL_DEPTH_BUFFER, m_depth_buffer);
+	m_fbo.attach_texture(GL_DEPTH_ATTACHMENT, m_depth_buffer);
 
 	// Create color texture
 	m_color_buffer.storage_2d(gl::texture_format::RGB16F, width, height);
@@ -85,6 +101,7 @@ void deferred_renderer::render_geometry(abd::draw_task_list draw_tasks, const ab
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
 	// Some uniforms
 	auto &uni_mat_model = m_geometry_program->get_uniform("mat_model");
@@ -120,13 +137,38 @@ void deferred_renderer::render_geometry(abd::draw_task_list draw_tasks, const ab
 			glDrawElementsBaseVertex(
 				GL_TRIANGLES,
 				mesh_data.draw_sizes[i],
-				GL_UNSIGNED_INT,            // FIXME
+				GL_UNSIGNED_INT,            //! \todo this should be based on type provided by abd::mesh
 				nullptr,
 				mesh_data.base_indices[i]
 				);
 		}
 	}
+}
 
 
-	//! \todo shading pass (maybe in a separate funcion)
+void deferred_renderer::shading_pass(GLuint output_fbo)
+{
+	abd::gl::debug_group d(0, "abd::deferred_renderer shading pass");
+
+
+	// Attach VAO and the framebuffer
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+	m_vao.bind();
+
+
+	//! \todo Light processing here
+
+	// Attach the blit quad to the VAO and disable depth test
+	m_vao.bind_buffer(0, m_blit_quad, {0, 3 * sizeof(float)});
+	glDisable(GL_DEPTH_TEST);
+
+
+	//! \todo postprocessing here
+
+	// Blit color buffer to the output FBO
+	m_blit_program->use();
+	m_blit_program->get_uniform("input_tex") = 0;
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, output_fbo);
+	glBindTextureUnit(0, m_color_buffer);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
