@@ -99,14 +99,6 @@ deferred_renderer::deferred_renderer(int width, int height) :
 
 	if (!m_fbo.is_complete())
 		throw abd::exception("deferred_renderer's FBO is incomplete!");
-
-	m_fbo.set_draw_buffers({
-		GL_COLOR_ATTACHMENT0,
-		GL_COLOR_ATTACHMENT1,
-		GL_COLOR_ATTACHMENT2,
-		GL_COLOR_ATTACHMENT3,
-		GL_COLOR_ATTACHMENT4,
-	});
 }
 
 
@@ -114,9 +106,17 @@ void deferred_renderer::render(abd::draw_task_list draw_tasks, const abd::camera
 {
 	abd::gl::debug_group d(0, "abd::deferred_renderer geometry pass");
 
-	// Beginning of the geometry pass - bind MRT FBO, VAO and proper program
+	// Beginning of the geometry pass - bind MRT
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
-	
+	m_fbo.set_draw_buffers({
+		GL_COLOR_ATTACHMENT0,
+		GL_COLOR_ATTACHMENT1,
+		GL_COLOR_ATTACHMENT2,
+		GL_COLOR_ATTACHMENT3,
+		GL_COLOR_ATTACHMENT4,
+	});
+
+	// Use the main VAO and geometry pass program
 	m_vao.bind();
 	m_geometry_program->use();
 
@@ -205,6 +205,7 @@ void deferred_renderer::render(abd::draw_task_list draw_tasks, const abd::camera
 	
 	// Attach only color buffer and clear it
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo);
+	m_fbo.set_draw_buffers({GL_COLOR_ATTACHMENT0});
 
 	// Use shading program and bind G-buffer textures (standard layout)
 	m_shading_program->use();
