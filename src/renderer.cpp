@@ -196,7 +196,7 @@ void deferred_renderer::render(abd::draw_task_list draw_tasks, const abd::camera
 		data.blend             = task.blend;
 		data.color_specular    = glm::vec4{task.color * task.power, task.specular};
 		data.position_distance = glm::vec4{task.position, task.distance};
-		data.direction_angle   = glm::vec4{task.direction, task.angle};
+		data.direction_angle   = glm::vec4{glm::normalize(task.direction), task.angle};
 	}
 	glUnmapNamedBuffer(m_lights_buffer);
 
