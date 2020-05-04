@@ -32,7 +32,8 @@ struct mesh_draw_task
 struct light_draw_task
 {
 	/**
-		Determines the light volume drawn during shading
+		Determines the light volume drawn during shading. This does not directly
+		determine the type of the light, though.
 	*/
 	enum class light_volume_type
 	{
@@ -41,15 +42,46 @@ struct light_draw_task
 		MESH      = 2,  //!< Affects a region determined by provided mesh  
 	};
 
-	light_volume_type volume;
-	glm::vec3 position;
-	glm::vec3 direction;
-	float attenuation;
-	float angle;
+	/**
+		Determines physical characteristics of the light source
+	*/
+	enum class light_type
+	{
+		POINT = 0,   //!< A point light source
+		SPOT  = 1,   //!< Directional light source
+		SUN   = 2,   //!< Light source in infinity (all rays are parallel)
+	};
 
+	//! Determines physical model
+	light_type type;
+
+	//! Determines what mesh should be drawn during shading
+	light_volume_type volume;
+	std::shared_ptr<abd::mesh> volume_mesh_ptr;
+
+	//! Determines light source position in space (point and spot only)
+	glm::vec3 position;
+	
+	//! Determines light direction (spot and sun only)
+	glm::vec3 direction;
+
+	//! Light color
 	glm::vec3 color;
 
-	std::shared_ptr<abd::mesh> volume_mesh_ptr;
+	//! Light power
+	float power;
+
+	//! Distance at which the light attenuates completely. 0 means no attenuation at all.
+	float distance;
+
+	//! Cone angle for spot lights
+	float angle;
+
+	//! Determines roll off characteristics of the spot light (0 - sharp, 1 - smooth)
+	float blend;
+
+	//! Specular contribution of the light
+	float specular;
 
 	//! Necessary for sorting lights
 	bool operator<(const light_draw_task &rhs) const;
@@ -88,22 +120,23 @@ class deferred_renderer
 public:
 	/**
 		Light data passed to the shaders in UBO.
+		Data in this struct corresponds to the data light_draw_task
+		but is more packed.
 	*/
 	struct ubo_light_data
 	{
 		GLint light_type;   //!< Determines light type (not the volume type)
-		GLfloat attenuation;
-		GLfloat angle;
-		GLfloat dummy;
-		glm::vec4 color;
-		glm::vec4 position;
-		glm::vec4 direction;
+		GLfloat blend;
+		GLfloat dummy1;
+		GLfloat dummy2;
+		glm::vec4 color_specular;
+		glm::vec4 position_distance;
+		glm::vec4 direction_angle;
 	};
 
 	deferred_renderer(int width, int height);
 
-	void render_geometry(abd::draw_task_list draw_tasks, const abd::camera &camera);
-	void shading_pass(abd::draw_task_list draw_tasks, GLuint output_fbo);
+	void render(abd::draw_task_list draw_tasks, const abd::camera &camer, GLuint output_fbo);
 
 	const abd::gl::framebuffer &get_fbo() const {return m_fbo;}
 

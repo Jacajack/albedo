@@ -10,8 +10,16 @@ using abd::deferred_renderer;
 
 bool abd::light_draw_task::operator<(const abd::light_draw_task &rhs) const
 {
-	if (this->volume == rhs.volume && this->volume == light_volume_type::MESH)
-		return this->volume_mesh_ptr < rhs.volume_mesh_ptr;
+	// Sort by volume type
+	if (this->volume == rhs.volume)
+	{
+		// Sort by mesh if different
+		if (this->volume == light_volume_type::MESH && this->volume_mesh_ptr != rhs.volume_mesh_ptr)
+			return this->volume_mesh_ptr < rhs.volume_mesh_ptr;
+		
+		// Sort identical meshes by light type
+		return this->type < rhs.type;
+	}
 	else return this->volume < rhs.volume;
 }
 
@@ -102,7 +110,7 @@ deferred_renderer::deferred_renderer(int width, int height) :
 }
 
 
-void deferred_renderer::render_geometry(abd::draw_task_list draw_tasks, const abd::camera &camera)
+void deferred_renderer::render(abd::draw_task_list draw_tasks, const abd::camera &camera, GLuint output_fbo)
 {
 	abd::gl::debug_group d(0, "abd::deferred_renderer geometry pass");
 
@@ -161,12 +169,11 @@ void deferred_renderer::render_geometry(abd::draw_task_list draw_tasks, const ab
 				);
 		}
 	}
-}
+
+	// -------------------------- shading pass
 
 
-void deferred_renderer::shading_pass(abd::draw_task_list draw_tasks, GLuint output_fbo)
-{
-	abd::gl::debug_group d(0, "abd::deferred_renderer shading pass");
+	abd::gl::debug_group d_shad(1, "abd::deferred_renderer shading pass");
 
 	// Sort lights in the processing order
 	auto &light_tasks = draw_tasks.light_draw_tasks;
@@ -185,12 +192,11 @@ void deferred_renderer::shading_pass(abd::draw_task_list draw_tasks, GLuint outp
 		auto &data = lights_data[i];
 		auto &task = light_tasks[i];
 		
-		data.light_type  = static_cast<GLint>(task.volume);
-		data.attenuation = task.attenuation;
-		data.angle       = task.angle;
-		data.color       = glm::vec4{task.color, 1};
-		data.position    = glm::vec4{task.position, 1};
-		data.direction   = glm::vec4{task.direction, 0};
+		data.light_type        = static_cast<GLint>(task.type);
+		data.blend             = task.blend;
+		data.color_specular    = glm::vec4{task.color * task.power, task.specular};
+		data.position_distance = glm::vec4{task.position, task.distance};
+		data.direction_angle   = glm::vec4{task.direction, task.angle};
 	}
 	glUnmapNamedBuffer(m_lights_buffer);
 
@@ -210,6 +216,11 @@ void deferred_renderer::shading_pass(abd::draw_task_list draw_tasks, GLuint outp
 	m_shading_program->get_uniform("tex_normal")   = 2;
 	m_shading_program->get_uniform("tex_diffuse")  = 3;
 	m_shading_program->get_uniform("tex_specular") = 4;
+
+	// Matrices
+	m_shading_program->get_uniform("mat_view") = camera.get_view_matrix();
+	m_shading_program->get_uniform("mat_proj") = camera.get_projection_matrix();
+	m_shading_program->get_uniform("mat_vp")   = camera.get_matrix();
 
 	// Additive blending
 	glBlendFunc(GL_SRC_COLOR, GL_DST_COLOR);
@@ -255,6 +266,8 @@ void deferred_renderer::shading_pass(abd::draw_task_list draw_tasks, GLuint outp
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_BLEND);
+
+	// -------------------------- postprocessing
 
 	//! \todo postprocessing here
 
