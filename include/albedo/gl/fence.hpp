@@ -82,7 +82,7 @@ void fence_sync::wait(GLuint64 timeout) const
 {
 	if (m_sync != nullptr)
 	{
-		glClientWaitSync(m_sync, 0, timeout);
+		glClientWaitSync(m_sync, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
 		glDeleteSync(m_sync);
 		m_sync = nullptr;
 	}
