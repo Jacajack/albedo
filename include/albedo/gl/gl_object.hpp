@@ -108,10 +108,7 @@ gl_object<T> &gl_object<T>::operator=(gl_object<T> &&rhs) noexcept
 {
 	// Prevent self-move
 	if (this != &rhs)
-	{
-		m_id = rhs.m_id;
-		rhs.m_id = 0;
-	}
+		std::swap(m_id, rhs.m_id);
 
 	return *this;
 }
