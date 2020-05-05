@@ -67,6 +67,7 @@ add_library(
 	"${PROJECT_SOURCE_DIR}/gl/shader.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/program.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/buffer.cpp"
+	"${PROJECT_SOURCE_DIR}/gl/synced_buffer.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/vertex_array.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/uniform.cpp"
 	"${PROJECT_SOURCE_DIR}/gl/framebuffer.cpp"
