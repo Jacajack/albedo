@@ -1,5 +1,6 @@
 #pragma once
 
+#include <albedo/gl/synced_buffer.hpp>
 #include <albedo/gl/framebuffer.hpp>
 #include <albedo/gl/texture.hpp>
 #include <albedo/gl/program.hpp>
@@ -169,10 +170,10 @@ public:
 private:
 	static const int max_light_count = 128;
 
-	void prepare_lights_data(std::vector<light_draw_task> &light_tasks, ubo_light_data *light_data);
+	void prepare_lights_data(std::vector<light_draw_task> &light_tasks, gl::synced_buffer_handle &lights_buffer_chunk);
 	
 	void geometry_pass(std::vector<mesh_draw_task> &mesh_tasks, const abd::camera &camera);
-	void lighting_pass(std::vector<light_draw_task> &light_tasks, const abd::camera &camera);
+	void lighting_pass(std::vector<light_draw_task> &light_tasks, gl::synced_buffer_handle &lights_buffer_chunk, const abd::camera &camera);
 	void blit_to_output(GLuint output_fbo);
 
 	/**
@@ -192,7 +193,7 @@ private:
 	/**
 		Contains information about all the lights to be processed
 	*/
-	abd::gl::buffer m_lights_buffer;
+	abd::gl::synced_buffer m_lights_buffer;
 
 	/**
 		The main VAO - input stage for the geomatry pass shaders
