@@ -133,7 +133,7 @@ void main()
 		}
 
 		f_lighting += intensity * f_diffuse * l_color * clamp(dot(N, -L), 0, 1);
-		f_lighting += intensity * l_specular * pow(clamp(dot(R, E), 0, 1), 4);
+		f_lighting += intensity * l_specular * l_color * pow(clamp(dot(R, E), 0, 1), 4);
 	}
 
 	f_color = f_lighting;

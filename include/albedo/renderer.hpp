@@ -19,7 +19,6 @@ struct mesh_draw_task
 };
 
 
-
 /**
 	Contains all information required to perform a shading operation.
 
@@ -103,36 +102,63 @@ struct draw_task_list
 };
 
 /**
-	Deferred renderer.
+	Deferred renderer's geometry buffer
 
-	\todo optimize G-buffer layout
-
-	Standard MRT layout for the deferred renderer is:
+	Standard MRT layout is:
 	layout (location = 0) out vec3 f_color;
 	layout (location = 1) out vec3 f_pos;
 	layout (location = 2) out vec3 f_normal;
 	layout (location = 3) out vec3 f_diffuse;
 	layout (location = 4) out vec3 f_specular;
 
+	\todo optimize layout
+*/
+struct standard_gbuffer
+{
+	/**
+		The depth buffer (32F)
+		\note FBO depth attachment
+	*/
+	gl::texture<gl::texture_target::TEXTURE_2D> depth;
+
+	/**
+		Contains three floating-point components that contain screen-space
+		coordinates of fragments.
+		\note FBO color attachment 1
+
+		\todo reconstruct position from depth!
+	*/
+	gl::texture<gl::texture_target::TEXTURE_2D> position;
+
+	/**
+		Three 16-bit floating point components - screen-space normals
+		\note FBO color attachment 2
+	*/
+	gl::texture<gl::texture_target::TEXTURE_2D> normal;
+
+	/**
+		Three 8-bit RGB components of diffuse material color
+		\note FBO color attachment 3
+	*/
+	gl::texture<gl::texture_target::TEXTURE_2D> diffuse;
+
+	/**
+		R - specular intensity
+		G - specular exponent
+		B - material roughness
+		\note FBO color attachment 4
+	*/
+	gl::texture<gl::texture_target::TEXTURE_2D> specular;
+};
+
+/**
+	Deferred renderer.
 */
 class deferred_renderer
 {
 public:
-	/**
-		Light data passed to the shaders in UBO.
-		Data in this struct corresponds to the data light_draw_task
-		but is more packed.
-	*/
-	struct ubo_light_data
-	{
-		GLint light_type;   //!< Determines light type (not the volume type)
-		GLfloat blend;
-		GLfloat dummy1;
-		GLfloat dummy2;
-		glm::vec4 color_specular;
-		glm::vec4 position_distance;
-		glm::vec4 direction_angle;
-	};
+	struct gbuffer;
+	struct ubo_light_data;
 
 	deferred_renderer(int width, int height);
 
@@ -142,6 +168,21 @@ public:
 
 private:
 	static const int max_light_count = 128;
+
+	void prepare_lights_data(std::vector<light_draw_task> &light_tasks, ubo_light_data *light_data);
+	
+	void geometry_pass(std::vector<mesh_draw_task> &mesh_tasks, const abd::camera &camera);
+	void lighting_pass(std::vector<light_draw_task> &light_tasks, const abd::camera &camera);
+	void blit_to_output(GLuint output_fbo);
+
+	/**
+		The actual color buffer that we later output HDR image to
+		\note FBO color attachment 0
+	*/
+	gl::texture<gl::texture_target::TEXTURE_2D> m_color_buffer;
+
+	//! The G-buffer
+	standard_gbuffer m_gbuffer;
 
 	/**
 		Contains a quad used for blitting and postprocessing
@@ -158,43 +199,7 @@ private:
 	*/
 	abd::fixed_vao m_vao{abd::standard_vao_layout};
 
-	/**
-		The depth buffer (32F)
-	*/
-	gl::texture<gl::texture_target::TEXTURE_2D> m_depth_buffer;
 
-	/**
-		The actual color buffer that we later output HDR image to
-	*/
-	gl::texture<gl::texture_target::TEXTURE_2D> m_color_buffer;
-
-	/**
-		Contains three floating-point components that contain screen-space
-		coordinates of fragments.
-
-		\todo reconstruct position from depth!
-	*/
-	gl::texture<gl::texture_target::TEXTURE_2D> m_position_buffer;
-
-	/**
-		Three 16-bit floating point components - screen-space normals
-	*/
-	gl::texture<gl::texture_target::TEXTURE_2D> m_normal_buffer;
-
-	/**
-		Three 8-bit RGB components of diffuse material color
-	*/
-	gl::texture<gl::texture_target::TEXTURE_2D> m_diffuse_buffer;
-
-	/**
-		R - specular intensity
-		G - specular exponent
-		B - material roughness
-	*/
-	gl::texture<gl::texture_target::TEXTURE_2D> m_specular_buffer;
-
-	// More buffers to come
- 
 	// Framebuffer
 	int m_fbo_width;
 	int m_fbo_height;
@@ -203,6 +208,22 @@ private:
 	std::unique_ptr<gl::program> m_geometry_program;
 	std::unique_ptr<gl::program> m_shading_program;
 	std::unique_ptr<gl::program> m_blit_program;
+};
+
+/**
+	Light data passed to the shaders in UBO.
+	Data in this struct corresponds to the data light_draw_task
+	but is more packed.
+*/
+struct deferred_renderer::ubo_light_data
+{
+	GLint light_type;   //!< Determines light type (not the volume type)
+	GLfloat blend;
+	GLfloat dummy1;
+	GLfloat dummy2;
+	glm::vec4 color_specular;
+	glm::vec4 position_distance;
+	glm::vec4 direction_angle;
 };
 
 /**
