@@ -108,6 +108,8 @@ void window::keyboard_handler::callback(int key, int scancode, int action, int m
 
 void window::mouse_handler::button_callback(int button, int action, int mods)
 {
+	if (m_button_func)
+		m_button_func(button, action, mods);
 }
 
 void window::mouse_handler::position_callback(double x, double y)

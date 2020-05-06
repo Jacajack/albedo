@@ -139,9 +139,16 @@ public:
 		return {m_x, m_y};
 	}
 
+	void set_button_func(const std::function<void(int button, int action, int mods)> &f)
+	{
+		m_button_func = f;
+	}
+
 private:
 	void button_callback(int button, int action, int mods);
 	void position_callback(double x, double y);
+
+	std::function<void(int button, int action, int mods)> m_button_func;
 
 	double m_x, m_y;
 };
