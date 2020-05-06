@@ -8,6 +8,7 @@ synced_buffer::synced_buffer(GLsizeiptr chunk_size, GLbitfield flags, int chunk_
 	m_buffer(chunk_size * chunk_count, nullptr, flags | GL_MAP_PERSISTENT_BIT),
 	m_fences(chunk_count)
 {
+	if (flags & GL_MAP_WRITE_BIT) flags |= GL_MAP_FLUSH_EXPLICIT_BIT;
 	m_map_ptr = glMapNamedBufferRange(m_buffer, 0, chunk_size * chunk_count, flags | GL_MAP_PERSISTENT_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 	if (m_map_ptr == nullptr)
 		throw abd::exception("abd::gl::synced_buffer failed to map the buffer");
@@ -24,7 +25,7 @@ abd::gl::synced_buffer_handle synced_buffer::get_chunk()
 	m_fences[m_current_chunk].wait();
 
 	// Create a handle
-	synced_buffer_handle handle(m_chunk_size, m_current_chunk, m_map_ptr, this, &m_fences[m_current_chunk]);
+	synced_buffer_handle handle(this, m_current_chunk);
 
 	// Increment chunk id
 	m_current_chunk = (m_current_chunk + 1) % m_chunk_count;

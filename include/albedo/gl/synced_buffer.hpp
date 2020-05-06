@@ -8,8 +8,10 @@ namespace abd::gl {
 class synced_buffer_handle;
 
 /**
-	Upon request, returns synced buffer handles to chunks that
+	Upon request, returns handles to buffer chunks that
 	are guaranteed not to be in use by the GPU.
+
+	This class is optimized for writing the mapped memory.
 */
 class synced_buffer
 {
@@ -24,10 +26,12 @@ public:
 	synced_buffer &operator=(synced_buffer &&) = default;
 
 	synced_buffer_handle get_chunk();
-	inline gl::buffer &get_buffer();
 	inline GLsizeiptr get_chunk_size() const;
 	inline int get_chunk_count() const;
-	inline void *get_map_ptr();
+
+	inline gl::fence_sync &get_fence(int index = 0);
+	inline gl::buffer &get_buffer(int index = 0);
+	inline void *get_map_ptr(int index = 0);
 
 private:
 	GLsizeiptr m_chunk_size;
@@ -39,9 +43,14 @@ private:
 	void* m_map_ptr = nullptr;
 };
 
-gl::buffer &synced_buffer::get_buffer()
+gl::buffer &synced_buffer::get_buffer(int index)
 {
 	return m_buffer;
+}
+
+gl::fence_sync &synced_buffer::get_fence(int index)
+{
+	return m_fences.at(index);
 }
 
 GLsizeiptr synced_buffer::get_chunk_size() const
@@ -54,81 +63,110 @@ int synced_buffer::get_chunk_count() const
 	return m_chunk_count;
 }
 
-void *synced_buffer::get_map_ptr()
+/**
+	Returns a pointer to mapped buffer memory
+*/
+void *synced_buffer::get_map_ptr(int index)
 {
 	return m_map_ptr;
 }
 
 /**
 	Represents a handle to a buffer chunk.
+
+	This may be a handle to a separate buffer object, if the
+	client does not support ARB_buffer_storage.
 */
 class synced_buffer_handle
 {
 	friend class synced_buffer;
 
 public:
-	inline GLsizeiptr get_chunk_size() const;
-	inline GLsizeiptr get_chunk_offset() const;
-	inline int get_chunk_index() const;
+	inline GLsizeiptr get_size() const;
+	inline GLsizeiptr get_offset() const;
+	inline int get_index() const;
 
-	inline void *get_chunk_ptr();
+	inline void *get_ptr();
 	inline gl::synced_buffer &get_synced_buffer();
 	inline gl::fence_sync &get_fence();
+	inline gl::buffer &get_buffer();
 
+	inline void flush();
 	inline void fence();
 
 private:
-	inline synced_buffer_handle(GLsizeiptr chunk_size, int chunk_id, void *map, gl::synced_buffer *buf, gl::fence_sync *fence);
+	inline synced_buffer_handle(gl::synced_buffer *buf, int index);
 
-	GLsizeiptr m_chunk_size;
-	int m_chunk_index;
-	void *m_map_ptr;
-	gl::synced_buffer *m_buffer;
-	gl::fence_sync *m_fence;
+	int m_index;
+	gl::synced_buffer *m_synced_buffer;
 };
 
-synced_buffer_handle::synced_buffer_handle(GLsizeiptr chunk_size, int chunk_id, void *map, gl::synced_buffer *buf, gl::fence_sync *fence) :
-	m_chunk_size(chunk_size),
-	m_chunk_index(chunk_id),
-	m_map_ptr(map),
-	m_buffer(buf),
-	m_fence(fence)
+synced_buffer_handle::synced_buffer_handle(gl::synced_buffer *buf, int index) :
+	m_index(index),
+	m_synced_buffer(buf)
 {
 }
 
-GLsizeiptr synced_buffer_handle::get_chunk_size() const
+GLsizeiptr synced_buffer_handle::get_size() const
 {
-	return m_chunk_size;
+	return m_synced_buffer->get_chunk_size();
 }
 
-GLsizeiptr synced_buffer_handle::get_chunk_offset() const
+/**
+	Reurns offset relative to the beginning of the buffer
+	returned by get_buffer() (and the buffer's BASE map pointer)
+*/
+GLsizeiptr synced_buffer_handle::get_offset() const
 {
-	return m_chunk_size * m_chunk_index;
+	return get_size() * m_index;
 }
 
-int synced_buffer_handle::get_chunk_index() const
+/**
+	Returns chunk index within synced_buffer
+*/
+int synced_buffer_handle::get_index() const
 {
-	return m_chunk_index;
+	return m_index;
 }
 
-void *synced_buffer_handle::get_chunk_ptr()
+/**
+	Returns pointer to the mapped buffer data (not the buffer beginning)
+*/
+void *synced_buffer_handle::get_ptr()
 {
-	return static_cast<char*>(m_map_ptr) + get_chunk_offset();
+	return static_cast<char*>(m_synced_buffer->get_map_ptr()) + get_offset();
 }
 
 gl::synced_buffer &synced_buffer_handle::get_synced_buffer()
 {
-	return *m_buffer;
+	return *m_synced_buffer;
+}
+
+/**
+	Returns a reference to the OpenGL buffer this handle
+	is associated with
+*/
+gl::buffer &synced_buffer_handle::get_buffer()
+{
+	return m_synced_buffer->get_buffer(m_index);
 }
 
 gl::fence_sync &synced_buffer_handle::get_fence()
 {
-	return *m_fence;
+	return m_synced_buffer->get_fence(m_index);
+}
+
+/**
+	Flushes mapped memory region after writing
+*/
+void synced_buffer_handle::flush()
+{
+	glFlushMappedNamedBufferRange(get_buffer(), get_offset(), get_size());
 }
 
 void synced_buffer_handle::fence()
 {
-	m_fence->fence();
+	get_fence().fence();
 }
 
 }

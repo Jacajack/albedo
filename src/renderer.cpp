@@ -128,7 +128,7 @@ void deferred_renderer::render(abd::draw_task_list draw_tasks, const abd::camera
 */
 void deferred_renderer::prepare_lights_data(std::vector<light_draw_task> &light_tasks, gl::synced_buffer_handle &lights_buffer_chunk)
 {
-	auto *lights_data = static_cast<ubo_light_data*>(lights_buffer_chunk.get_chunk_ptr());
+	auto *lights_data = static_cast<ubo_light_data*>(lights_buffer_chunk.get_ptr());
 
 	// Sort lights in the processing order
 	std::sort(light_tasks.begin(), light_tasks.end());
@@ -256,7 +256,7 @@ void deferred_renderer::lighting_pass(std::vector<light_draw_task> &light_tasks,
 	if (light_ub_id == GL_INVALID_INDEX)
 		throw abd::exception("could not access UBO containing light data");
 	glUniformBlockBinding(*m_shading_program, light_ub_id, 0);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_lights_buffer.get_buffer(), lights_buffer_chunk.get_chunk_offset(), lights_buffer_chunk.get_chunk_size());
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, lights_buffer_chunk.get_buffer(), lights_buffer_chunk.get_offset(), lights_buffer_chunk.get_size());
 
 	// Count global lights
 	int global_light_count{0};
@@ -285,6 +285,7 @@ void deferred_renderer::lighting_pass(std::vector<light_draw_task> &light_tasks,
 
 	//! \todo Light volume processing here
 
+	lights_buffer_chunk.flush();
 	lights_buffer_chunk.fence();
 }
 
