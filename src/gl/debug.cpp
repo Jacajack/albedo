@@ -44,10 +44,17 @@ void APIENTRY abd::gl::gl_debug_callback(GLenum source,
 		{GL_DEBUG_SEVERITY_NOTIFICATION, "notification"},
 	};
 
-	std::string message = length > 0 ? std::string{message_cstr, message_cstr + length} : std::string{message_cstr};
 
 	//! \todo replace this call with some proper handler object
-	std::cerr << type_names.at(type) << " reported by " << source_names.at(source) << ": " << message << std::endl;
+	try
+	{
+		std::string message = length > 0 ? std::string{message_cstr, message_cstr + length} : std::string{message_cstr};
+		std::cerr << type_names.at(type) << " reported by " << source_names.at(source) << ": " << message << std::endl;
+	}
+	catch (...)
+	{
+		std::cerr << "failed to print GL error message" << std::endl;
+	}
 }
 
 
