@@ -61,7 +61,8 @@ float spot_light_attenuation(in float dist, in float max_dist, in float cone_ang
 	if (max_dist <= 0 || dist < max_dist)
 	{
 		// Power correction for conical shape
-		float power = 2 / (1 - cos(cone_angle));
+		// float power = 2 / (1 - cos(cone_angle));
+		float power = 1;
 
 		// Inverse square attenuation
 		float attenuation = 1 / pow(dist, 2);
@@ -209,7 +210,7 @@ void main()
 			Attenuation and cone characteristics are taken into account here.
 		*/
 		float attenuation;
-		if (attenuation == LIGHT_TYPE_POINT)
+		if (l_type == LIGHT_TYPE_POINT)
 			attenuation = point_light_attenuation(dist, l_max_dist);
 		else if (l_type == LIGHT_TYPE_SPOT)
 			attenuation = spot_light_attenuation(dist, l_max_dist, l_angle, acos(clamp(dot(l_dir, -L), 0, 1)), l_blend);
