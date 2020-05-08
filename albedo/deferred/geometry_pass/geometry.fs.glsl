@@ -13,10 +13,23 @@ in struct VS_OUT
 	vec3 v_normal;
 } vs_out;
 
+/**
+	Material data
+
+	\todo supply material data in an UBO
+*/
+uniform struct
+{
+	vec3 diffuse;
+	float specular;
+	float roughness;
+	float specular_tint;
+} material;
+
 void main()
 {
 	f_pos = vs_out.v_pos;
 	f_normal = vs_out.v_normal;
-	f_diffuse = vec3(1);
-	// f_color = f_normal; // debug
+	f_diffuse = material.diffuse;
+	f_specular = vec3(material.specular, material.roughness, material.specular_tint);
 }

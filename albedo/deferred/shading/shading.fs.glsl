@@ -86,10 +86,15 @@ float spot_light_attenuation(in float dist, in float max_dist, in float cone_ang
 
 void main()
 {
-	vec3 f_pos     = texture(tex_position, vs_out.v_uv.xy).xyz;
-	vec3 f_normal  = texture(tex_normal, vs_out.v_uv.xy).xyz;
-	vec3 f_diffuse = texture(tex_diffuse, vs_out.v_uv.xy).xyz;
-	// vec3 f_diffuse = texture(tex_diffuse, vs_out.v_uv.xy).xyz;
+	vec3 f_pos      = texture(tex_position, vs_out.v_uv.xy).xyz;
+	vec3 f_normal   = texture(tex_normal, vs_out.v_uv.xy).xyz;
+	vec3 f_diffuse  = texture(tex_diffuse, vs_out.v_uv.xy).xyz;
+	vec3 f_specular = texture(tex_specular, vs_out.v_uv.xy).xyz;
+
+	float f_specular_amount = f_specular.r;
+	float f_roughness = f_specular.g;
+	float f_specular_tint = f_specular.b;
+	float f_specular_exponent = 1 + 99 * pow(1 - f_roughness, 2);
 
 	// Accumulated lighting
 	vec3 f_lighting = vec3(0);
@@ -133,7 +138,7 @@ void main()
 		}
 
 		f_lighting += intensity * f_diffuse * l_color * clamp(dot(N, -L), 0, 1);
-		f_lighting += intensity * l_specular * l_color * pow(clamp(dot(R, E), 0, 1), 4);
+		f_lighting += intensity * f_specular_amount * l_specular * l_color * pow(clamp(dot(R, E), 0, 1), f_specular_exponent);
 	}
 
 	f_color = f_lighting;
