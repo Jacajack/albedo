@@ -131,9 +131,9 @@ float smith_schlick(in vec3 N, in vec3 V, in vec3 L, in float k)
 /**
 	Fresnel-Schlick approximation
 */
-vec3 fresnel_schlick(in vec3 N, in vec3 L, in vec3 F0)
+vec3 fresnel_schlick(in vec3 H, in vec3 V, in vec3 F0)
 {
-	return F0 + (1 - F0) * pow(1 - dot(N, L), 5);
+	return F0 + (1 - F0) * pow(1 - dot(H, V), 5);
 }
 
 /**
@@ -151,7 +151,7 @@ vec3 pbr(in vec3 N, in vec3 L, in vec3 V, in vec3 albedo, in float roughness, in
 	// Normal distribution function, geometry function and Frensel equation
 	float NDF = trowbridge_reitz_ggx(N, H, a);
 	float GF  = smith_schlick(N, V, L, k);
-	vec3 F = fresnel_schlick(N, L, F0);
+	vec3 F = fresnel_schlick(H, V, F0);
 
 	// Specular and diffuse term intensities
 	vec3 k_s = F;
