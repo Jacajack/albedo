@@ -12,3 +12,9 @@ As for the actual rendering, I'm hoping to implement at least basic PBR.
 Some pics:
 
 ![2020-05-04](screens/2020-05-04.png)
+
+Going PBR:
+
+![2020-05-08](screens/2020-05-08-1.png)
+
+![2020-05-08](screens/2020-05-08-2.png)
