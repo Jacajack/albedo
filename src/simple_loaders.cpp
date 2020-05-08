@@ -22,6 +22,45 @@ abd::mesh_data abd::assimp_simple_load_mesh(const boost::filesystem::path &path)
 	// The mesh data, we're going to return
 	abd::mesh_data mesh_data;
 	
+	// Process materials
+	//! \todo replace the fucking resource_manager with something useful and fix this mess
+	std::vector<std::shared_ptr<material>> mats;
+	for (unsigned int i = 0; i < scene->mNumMaterials; i++)
+	{
+		const auto &mat = *scene->mMaterials[i];
+		material_data data;
+
+		aiString str;
+		mat.Get(AI_MATKEY_NAME, str);
+		std::cout << str.C_Str() << std::endl;
+
+
+		// Diffuse term
+		aiColor3D diffuse_color;
+		mat.Get(AI_MATKEY_COLOR_DIFFUSE, diffuse_color);
+		data.diffuse.r = diffuse_color.r;
+		data.diffuse.g = diffuse_color.g;
+		data.diffuse.b = diffuse_color.b;
+
+		// std::cout << "bright: " << data.diffuse.length() << std::endl;
+
+		// Shininess (specular exponent)
+		float shininess;
+		mat.Get(AI_MATKEY_SHININESS, shininess);
+		
+		// Shininess 900 --> roughness 0
+		// Shininess 0   --> roughness 1
+		// std::cout << shininess << std::endl;
+		data.roughness = 1 - std::pow(shininess / 900.f, 2.f);
+		// std::cout << data.roughness << std::endl;
+
+		// Specular amount
+		mat.Get(AI_MATKEY_SHININESS_STRENGTH, data.specular);
+		// data.specular = 1;
+
+		mats.emplace_back(std::make_shared<material>(data));
+	}
+
 	// Appends aiMesh to the mesh we're working on
 	auto process_mesh = [&](aiMesh *mesh)
 	{
@@ -69,6 +108,9 @@ abd::mesh_data abd::assimp_simple_load_mesh(const boost::filesystem::path &path)
 
 		// Assuming all faces are triangles
 		mesh_data.draw_sizes.push_back(mesh->mNumFaces * 3);
+
+		// Material
+		mesh_data.materials.push_back(mats.at(mesh->mMaterialIndex));
 	};
 
 	// Adds all node's meshes to the compound mesh
