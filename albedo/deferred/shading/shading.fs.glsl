@@ -83,6 +83,89 @@ float spot_light_attenuation(in float dist, in float max_dist, in float cone_ang
 		return 0;
 }
 
+/**
+	Returns light source's contribution to fragment lighting calculated
+	based on Phong model.
+*/
+vec3 phong(in vec3 N, in vec3 L, in vec3 V, in vec3 diffuse, in vec3 specular, in float specular_exponent)
+{
+	vec3 R = reflect(-L, N);
+	return diffuse * clamp(dot(N, -L), 0, 1) + specular * pow(clamp(dot(R, V), 0, 1), specular_exponent);
+}
+
+/**
+	Trowbridge-Reitz GGX normal distribution function
+	a - roughness
+*/
+float trowbridge_reitz_ggx(in vec3 N, in vec3 H, in float a)
+{
+	float N_dot_H = max(dot(N, H), 0);
+	float a_sq = a * a;
+	float tmp = N_dot_H * N_dot_H * (a_sq - 1) + 1;
+	return a_sq / (tmp * tmp * M_PI);
+}
+
+/**
+	Schlick GGX geometry function
+	k - roughness scaled
+		k_direct = (a+1)^2/8
+		k_IBL    = a^2/2
+*/
+float schlick_ggx(in vec3 N, in vec3 V, in float k)
+{
+	float tmp = max(dot(N, V), 0);
+	return tmp / (tmp * (1 - k) + k);
+}
+
+/**
+	Geometry function taking into account both geometry obstruction and geometry shadowing.
+	Based on Schlick GGX.
+
+	\todo This can be further optimized by passing only dot(N, V) to the schlick_ggx
+*/
+float smith_schlick(in vec3 N, in vec3 V, in vec3 L, in float k)
+{
+	return schlick_ggx(N, V, k) * schlick_ggx(N, L, k);
+}
+
+/**
+	Fresnel-Schlick approximation
+*/
+vec3 fresnel_schlick(in vec3 N, in vec3 L, in vec3 F0)
+{
+	return F0 + (1 - F0) * pow(1 - dot(N, L), 5);
+}
+
+/**
+	PBR lighting model (Cook-Torrance)
+*/
+vec3 pbr(in vec3 N, in vec3 L, in vec3 V, in vec3 albedo, in float roughness, in float metallic, in vec3 radiance)
+{
+	vec3 H = normalize(L + V);
+	vec3 F0 = mix(vec3(0.04), albedo, metallic);
+
+	// Calculate a and k based on roughness
+	float a = roughness;
+	float k = pow(a + 1, 2) / 8;
+
+	// Normal distribution function, geometry function and Frensel equation
+	float NDF = trowbridge_reitz_ggx(N, H, a);
+	float GF  = smith_schlick(N, V, L, k);
+	vec3 F = fresnel_schlick(N, L, F0);
+
+	// Specular and diffuse term intensities
+	vec3 k_s = F;
+	vec3 k_d = (1 - k_s) * (1 - metallic);
+
+	// Specular term
+	vec3 specular = NDF * GF * F / max(4 * max(dot(N, V), 0) * max(dot(N, L), 0), 0.001);
+
+	// Difuse term
+	vec3 diffuse = (vec3(1) - k_s) * albedo / M_PI;
+
+	//return F;
+	return (specular + diffuse) * radiance * max(dot(N, L), 0);
+}
 
 void main()
 {
@@ -100,9 +183,9 @@ void main()
 	vec3 f_lighting = vec3(0);
 
 	vec3 N = f_normal;
-	vec3 E = normalize(-f_pos); // Fragment -> Camera
+	vec3 V = normalize(-f_pos); // Fragment -> Camera
 
-	// Iterate over lights
+	// Iterate over light sources
 	for (int i = base_light_index; i < base_light_index + light_count; i++)
 	{
 		// Unpack the data from the UBO
@@ -115,30 +198,31 @@ void main()
 		float l_specular = lights_ubo.lights_data[i].color_specular.w;
 		float l_blend = lights_ubo.lights_data[i].blend;
 
-		vec3  light_to_frag = f_pos - l_pos;
+		vec3  light_to_frag = l_pos - f_pos;
 		float dist = length(light_to_frag);
-		vec3  L = normalize(light_to_frag); // Light -> Fragment
-		vec3  R = reflect(L, N);            // Reflected light
+		vec3  L = normalize(light_to_frag); // Fragment -> Light
 		
 		/*
-			General light intensity.
+			General light intensity. This value determines light source contribution
+			to lighting.
+
 			Attenuation and cone characteristics are taken into account here.
 		*/
-		float intensity;
-		if (l_type == LIGHT_TYPE_POINT)
-			intensity = point_light_attenuation(dist, l_max_dist);
+		float attenuation;
+		if (attenuation == LIGHT_TYPE_POINT)
+			attenuation = point_light_attenuation(dist, l_max_dist);
 		else if (l_type == LIGHT_TYPE_SPOT)
-			intensity = spot_light_attenuation(dist, l_max_dist, l_angle, acos(clamp(dot(l_dir, L), 0, 1)), l_blend);
+			attenuation = spot_light_attenuation(dist, l_max_dist, l_angle, acos(clamp(dot(l_dir, -L), 0, 1)), l_blend);
 		else if (l_type == LIGHT_TYPE_SUN)
 		{
 			// All light comes from one direction and has
 			// equal power
-			L = l_dir;
-			intensity = 1;
+			L = -l_dir;
+			attenuation = 1;
 		}
 
-		f_lighting += intensity * f_diffuse * l_color * clamp(dot(N, -L), 0, 1);
-		f_lighting += intensity * f_specular_amount * l_specular * l_color * pow(clamp(dot(R, E), 0, 1), f_specular_exponent);
+		// f_lighting += attenuation * l_color * phong(N, L, V, f_diffuse, f_specular_amount * f_diffuse, f_specular_exponent);
+		f_lighting += pbr(N, L, V, f_diffuse, 0.1, 0.1, attenuation * l_color);
 	}
 
 	f_color = f_lighting;
