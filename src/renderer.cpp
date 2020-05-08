@@ -206,6 +206,16 @@ void deferred_renderer::geometry_pass(std::vector<mesh_draw_task> &mesh_tasks, c
 		// Draw all sub-meshes one by one
 		for (unsigned int i = 0; i < mesh_data.base_indices.size(); i++)
 		{
+			//! \todo replace with preprocessed material data fed into an UBO
+			if (mesh_data.materials[i])
+			{
+				auto material = mesh_data.materials[i]->get_data();
+				m_geometry_program->get_uniform("material.diffuse") = material.diffuse;
+				m_geometry_program->get_uniform("material.specular") = material.specular;
+				m_geometry_program->get_uniform("material.roughness") = material.roughness;
+				m_geometry_program->get_uniform("material.specular_tint") = material.specular_tint;
+			}
+
 			glDrawElementsBaseVertex(
 				GL_TRIANGLES,
 				mesh_data.draw_sizes[i],

@@ -4,7 +4,7 @@
 #include <albedo/gl/framebuffer.hpp>
 #include <albedo/gl/texture.hpp>
 #include <albedo/gl/program.hpp>
-#include <albedo/scene.hpp>
+#include <albedo/mesh.hpp>
 #include <albedo/camera.hpp>
 #include <memory>
 
@@ -160,6 +160,7 @@ class deferred_renderer
 public:
 	struct gbuffer;
 	struct ubo_light_data;
+	struct ubo_material_data;
 
 	deferred_renderer(int width, int height);
 
@@ -225,6 +226,19 @@ struct deferred_renderer::ubo_light_data
 	glm::vec4 color_specular;
 	glm::vec4 position_distance;
 	glm::vec4 direction_angle;
+};
+
+/**
+	Material data as passed to the geometry pass shader.
+*/
+struct deferred_renderer::ubo_material_data
+{
+	glm::vec4 diffuse;
+	std::uint64_t diffuse_tex; // sampler2D
+
+	float specular;
+	float roughness;
+	float specular_tint;
 };
 
 /**
