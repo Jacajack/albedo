@@ -46,11 +46,20 @@ in struct VS_OUT
 	vec2 v_uv;
 } vs_out;
 
+/**
+	\todo this is just handy but is also extremely stupid and needs to be replaced
+*/
+float light_attenuation(in float dist)
+{
+	#define LIGHT_ATTENUATION_FACTOR 2
+	return 1 / pow(dist / LIGHT_ATTENUATION_FACTOR, 2);
+}
+
 float point_light_attenuation(in float dist, in float max_dist)
 {
 	// FIXME
 	if (max_dist <= 0 || dist < max_dist)
-		return 1 / pow(dist, 2);
+		return light_attenuation(dist);
 	else
 		return 0;
 }
@@ -65,7 +74,7 @@ float spot_light_attenuation(in float dist, in float max_dist, in float cone_ang
 		float power = 1;
 
 		// Inverse square attenuation
-		float attenuation = 1 / pow(dist, 2);
+		float attenuation = light_attenuation(dist);
 
 		// Clamped ray angle to cone angle ratio
 		// determines attenuation
