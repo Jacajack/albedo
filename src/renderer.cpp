@@ -35,7 +35,7 @@ deferred_renderer::deferred_renderer(int width, int height) :
 	{
 		m_geometry_program = std::make_unique<gl::program>(abd::simple_load_shader_dir("albedo/deferred/geometry_pass"));
 		m_shading_program = std::make_unique<gl::program>(abd::simple_load_shader_dir("albedo/deferred/shading"));
-		m_blit_program = std::make_unique<gl::program>(abd::simple_load_shader_dir("albedo/deferred/blit"));
+		m_postprocess_program = std::make_unique<gl::program>(abd::simple_load_shader_dir("albedo/deferred/postprocess"));
 	}
 	catch (const abd::gl::shader_exception &ex)
 	{
@@ -119,8 +119,8 @@ void deferred_renderer::render(abd::draw_task_list draw_tasks, const abd::camera
 	lights_data_ready.wait();
 	lighting_pass(draw_tasks.light_draw_tasks, lights_buffer_chunk, camera);
 
-	//! \todo postprocessing here
-	blit_to_output(output_fbo);
+	// Postprocess and output image to the output FBO
+	postprocess_to_output(output_fbo);
 }
 
 /**
@@ -299,16 +299,16 @@ void deferred_renderer::lighting_pass(std::vector<light_draw_task> &light_tasks,
 	lights_buffer_chunk.fence();
 }
 
-void deferred_renderer::blit_to_output(GLuint output_fbo)
+void deferred_renderer::postprocess_to_output(GLuint output_fbo)
 {
-	// Blit color buffer to the output FBO
+	// Postprocess color buffer and output it to the output FBO
 	// Attach the blit quad to the VAO, disable depth test and blending
 	m_vao.bind_buffer(0, m_blit_quad, {0, 3 * sizeof(float)});
 	glDisable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
 	glDisable(GL_BLEND);
-	m_blit_program->use();
-	m_blit_program->get_uniform("input_tex") = 0;
+	m_postprocess_program->use();
+	m_postprocess_program->get_uniform("input_tex") = 0;
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, output_fbo);
 	glBindTextureUnit(0, m_color_buffer);
 	glDrawArrays(GL_TRIANGLES, 0, 6);

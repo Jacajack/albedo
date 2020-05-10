@@ -175,7 +175,7 @@ private:
 	
 	void geometry_pass(std::vector<mesh_draw_task> &mesh_tasks, const abd::camera &camera);
 	void lighting_pass(std::vector<light_draw_task> &light_tasks, gl::synced_buffer_handle &lights_buffer_chunk, const abd::camera &camera);
-	void blit_to_output(GLuint output_fbo);
+	void postprocess_to_output(GLuint output_fbo);
 
 	/**
 		The actual color buffer that we later output HDR image to
@@ -209,7 +209,7 @@ private:
 
 	std::unique_ptr<gl::program> m_geometry_program;
 	std::unique_ptr<gl::program> m_shading_program;
-	std::unique_ptr<gl::program> m_blit_program;
+	std::unique_ptr<gl::program> m_postprocess_program;
 };
 
 /**
